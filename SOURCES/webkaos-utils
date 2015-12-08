@@ -1,0 +1,432 @@
+#!/usr/bin/env bash
+
+########################################################################################
+
+# Utility name
+APP="WEBKAOS Utils"
+
+# Utility version
+VER="1.0"
+
+########################################################################################
+
+NORM=0
+BOLD=1
+UNLN=4
+RED=31
+GREEN=32
+BROWN=33
+BLUE=34
+MAG=35
+CYAN=36
+GREY=37
+
+CL_NORM="\e[${NORM}m"
+CL_BOLD="\e[${BOLD}m"
+CL_UNLN="\e[${UNLN}m"
+CL_RED="\e[${RED}m"
+CL_GREEN="\e[${GREEN}m"
+CL_BROWN="\e[${BROWN}m"
+CL_BLUE="\e[${BLUE}m"
+CL_MAG="\e[${MAG}m"
+CL_CYAN="\e[${CYAN}m"
+CL_GREY="\e[${GREY}m"
+CL_BL_RED="\e[${RED};1m"
+CL_BL_GREEN="\e[${GREEN};1m"
+CL_BL_BROWN="\e[${BROWN};1m"
+CL_BL_BLUE="\e[${BLUE};1m"
+CL_BL_MAG="\e[${MAG};1m"
+CL_BL_CYAN="\e[${CYAN};1m"
+CL_BL_GREY="\e[${GREY};1m"
+CL_UL_RED="\e[${RED};4m"
+CL_UL_GREEN="\e[${GREEN};4m"
+CL_UL_BROWN="\e[${BROWN};4m"
+CL_UL_BLUE="\e[${BLUE};4m"
+CL_UL_MAG="\e[${MAG};4m"
+CL_UL_CYAN="\e[${CYAN};4m"
+CL_UL_GREY="\e[${GREY};4m"
+CL_BG_RED="\e[${RED};7m"
+CL_BG_GREEN="\e[${GREEN};7m"
+CL_BG_BROWN="\e[${BROWN};7m"
+CL_BG_BLUE="\e[${BLUE};7m"
+CL_BG_MAG="\e[${MAG};7m"
+CL_BG_CYAN="\e[${CYAN};7m"
+CL_BG_GREY="\e[${GREY};7m"
+
+########################################################################################
+
+# Pattern used for generating temporary files and directories
+TMP_PATTERN="/tmp/_wu.XXXXXXXXX"
+
+########################################################################################
+
+SUPPORTED_ARGS="!help !usage !version !ver"
+SHORT_ARGS="h:!help v:!version"
+
+########################################################################################
+
+# Main functions
+#
+# *: All arguments passed to script
+#
+# Code: none
+# Echo: none
+main() {
+  if [[ $version || $ver ]] ; then
+    about && exit 0
+  fi
+
+  if [[ $# -eq 0 || $help || $usage ]] ; then
+    usage && exit 0
+  fi
+
+  local cmd="$1"
+
+  shift 1
+
+  case $cmd in
+    "req-gen")    genRequest $@    ;;
+    "hpkp-gen")   genHPKPHeader $@ ;;
+    "ocsp-gen")   genOCSP $@       ;;
+    "ocsp-check") checkOCSP $@     ;;
+    *) show "Unknown command $cmd" $RED
+       doExit 1 ;;
+  esac
+
+  doExit 0
+}
+
+# Generate OCSP
+#
+# 1: Server cert or cert chain file (String)
+# 2: Issuer cert (String) [Optional]
+#
+# Code: None
+# Echo: None
+genOCSP() {
+  local issuer_cert server_cert output
+
+  if [[ $# -le 1 ]] ; then
+    usage && doExit 0
+  fi
+
+  if [[ ! -f $1 ]] ; then
+    show "File $1 is not exist" $RED
+    return 1
+  fi
+
+  if isChain "$1" ; then
+    server_cert=$(extractCertFromChain "$1" 1)
+    issuer_cert=$(extractCertFromChain "$1" 2)
+    output="${$1//.crt/.oscp}"
+  else
+    server_cert="$1"
+    issuer_cert="$2"
+    output="${$2//.crt/.oscp}"
+  fi
+
+  if [[ ! -f $server_cert ]] ; then
+    show "Server certificate file $server_cert is not exist" $RED
+    doExit 1
+  fi
+
+  if [[ ! -f $issuer_cert ]] ; then
+    show "Issuer certificate file $issuer_cert is not exist" $RED
+    doExit 1
+  fi
+
+  generateOCSPFile "$issuer_cert" "$server_cert" "$output"
+
+  if [[ $? -ne 0 ]] ; then
+    doExit 1
+  fi
+}
+
+# Check OCSP stapling
+#
+# 1: Host and port (String)
+#
+# Code: None
+# Echo: None
+checkOCSP() {
+  if [[ $# -eq 0 ]] ; then
+    usage && exit 0
+  fi
+
+  local host="$1"
+
+  if [[ $(echo "$host" | grep ":443") == "" ]] ; then
+    host="$host:443"
+  fi
+
+  local sn
+
+  if [[ -n $servername ]] ; then
+    sn="-servername $servername"
+  fi
+
+  local tmp_file=$(mktemp -u $TMP_PATTERN)
+  local status=$(openssl s_client $sn -connect $host -tls1 -tlsextdebug -status 2>&1 < /dev/null &> $tmp_file)
+
+  if [[ $(grep 'OCSP Response Status: successful' $tmp_file) == "" ]] ; then
+    show "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
+    doExit 1
+  fi
+
+  show "OCSP Response Status: ${CL_GREEN}Success${CL_NORM}"
+  grep -A 14 'OCSP Response Data:' $tmp_file
+}
+
+# Generate signing request 
+#
+# 1: Hostname (String)
+#
+# Code: None
+# Echo: None
+genRequest() {
+  if [[ $# -eq 0 ]] ; then
+    usage && doExit 0
+  fi
+
+  local host="$1"
+
+  openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout ${host}.key -out ${host}.csr
+}
+
+# Generate HPKP for some request
+#
+# 1: Path to csr file (String)
+#
+# Code: None
+# Echo: None
+genHPKPHeader() {
+  if [[ $# -eq 0 ]] ; then
+    usage && doExit 0
+  fi
+
+  local csr="$1"
+  
+  if [[ ! -f $csr ]] ; then
+    show "File $csr is not exist" $RED
+    doExit 1
+  fi
+
+  local csr_hash=$(openssl req -inform pem -pubkey -noout < $csr | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64)
+
+  if [[ -z "$csr_hash" ]] ; then
+    show "Can't generate HPKP for given request" $RED
+    doExit 1
+  fi
+
+  show ""
+  show "HPKP Header successfully generated!" $GREEN
+  show "Add this header to server part of your config file."
+
+  show ""
+  show "add_header \"Public-Key-Pins\" \"max-age=2592000; pin-sha256=$csr_hash\";"
+  show ""
+}
+
+########################################################################################
+
+# Generate OCSP file
+#
+# 1: Path to server certificate (String)
+# 2: Path to issuer certificate (String)
+# 3: Output name (String) [Optional]
+#
+# Code: Yes
+# Echo: None
+generateOCSPFile() {
+  local issuer_cert="$1"
+  local server_cert="$2"
+  local output="$3"
+
+  local url=$(openssl x509 -in $server_cert -text | grep "OCSP - URI:" | cut -d: -f2,3)
+
+  openssl ocsp -noverify -no_nonce -respout $output -issuer $issuer_cert -cert $server_cert -url $url &> /dev/null
+
+  if [[ $? -ne 0 ]] ; then
+    show "Error while OCSP stapling file generation" $RED
+    return 1
+  fi
+
+  show "OCSP stapling file saved as $output" $GREEN
+
+  return 0
+}
+
+# Check if given file is chain
+#
+# 1: Path to file (String)
+#
+# Code: Yes
+# Echo: none
+isChain() {
+  local file="$1"
+
+  [[ ! -f $file ]] && return 1
+
+  if [[ $(cat $file | grep "BEGIN CERTIFICATE" | wc -l) -le 1 ]] ; then
+    return 1
+  fi
+
+  return 0
+}
+
+# Remove temporary data and exit with given exit code
+#
+# 1: Exit code (Number) [Optional]
+#
+# Code: none
+# Echo: none
+doExit() {
+  local ec="${1:-0}"
+
+  rm -f "${TMP_PATTERN//XXXXXXXXX/}*"
+
+  exit $ec
+}
+
+########################################################################################
+
+show() {
+  if [[ -n "$2" ]] ; then
+    echo -e "\e[${2}m${1}${CL_NORM}"
+  else
+    echo -e "$@"
+  fi
+}
+
+usage() {
+  show ""
+  show "${CL_BOLD}Usage:${CL_NORM} wu ${CL_BROWN}command${CL_NORM} args..."
+  show ""
+  show "Commands" $BOLD
+  show ""
+  show "  ${CL_BROWN}req-gen${CL_NORM} ${CL_GREY}host${CL_NORM}                      Generate RSA key and a certificate signing request"
+  show "  ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr-file${CL_NORM}                 Generate HTTP public key pinning (HPKP) header"
+  show "  ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM}  Generate OCSP stapling file"
+  show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM}                   Check OCSP response status for some host"
+  show ""
+  show "Options" $BOLD
+  show ""
+  show "  ${CL_GREEN}--help, -h${CL_NORM}                      Show this help message"
+  show "  ${CL_GREEN}--version, -v${CL_NORM}                   Show information about version"
+  show ""
+}
+
+about() {
+  show ""
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Helpers for working with webkaos server"
+  show ""
+  show "Copyright (C) 2009-2015 ESSENTIAL KAOS" $BOLD
+  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol?en>" $BOLD
+  show ""
+}
+
+showArgWarn() {
+  show "Unknown argument $1." $RED
+  exit 1
+}
+
+## ARGUMENTS PARSING 2 #################################################################
+
+[[ $# -eq 0 ]] && main && exit $?
+
+unset arg argn argm argv argt argk
+
+argv="$*" ; argt=""
+
+while [[ -n "$1" ]] ; do
+  if [[ "$1" =~ \  && -n "$argn" ]] ; then
+    declare $argn="$1"
+
+    unset argn && shift && continue
+  elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
+    argm=${1:1}
+
+    if [[ \ $SHORT_ARGS\  =~ \ $argm:!?([a-zA-Z0-9_]*) ]] ; then
+      arg="${BASH_REMATCH[1]}"
+    else
+      showArgWarn "-$argm" 2> /dev/null || :
+      shift && continue
+    fi
+
+    if [[ -z "$argn" ]] ; then
+      argn=$arg
+    else
+      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+      argn=$arg
+    fi
+
+    if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+      showArgWarn "-$argm" 2> /dev/null || :
+      shift && continue
+    fi
+
+    if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+      declare $argn=true ; unset argn ; argk=true
+    else
+      unset argk
+    fi
+
+    shift && continue
+  elif [[ "$1" =~ ^-{2}[a-zA-Z]{1}[a-zA-Z0-9_-]+.*$ ]] ; then
+    arg=${1:2}
+
+    if [[ $arg == *=* ]] ; then
+      IFS="=" read -ra arg <<< "$arg"
+
+      argm="${arg[0]}" ; argm=${argm//-/_}
+
+      if [[ ! $SUPPORTED_ARGS\  =~ $argm\  ]] ; then
+        showArgWarn "--${arg[0]//_/-}" 2> /dev/null || :
+        shift && continue
+      fi
+
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare $argm="${!argm} ${arg[@]:1:99}" || declare $argm="${arg[@]:1:99}"
+
+      unset argm && shift && continue
+    else
+      arg=${arg//-/_}
+
+      if [[ -z "$argn" ]] ; then
+        argn=$arg
+      else
+        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+        argn=$arg
+      fi
+
+      if [[ ! $SUPPORTED_ARGS\  =~ !?$argn\  ]] ; then
+        showArgWarn "--${argn//_/-}" 2> /dev/null || :
+        shift && continue
+      fi
+
+      if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
+        declare $argn=true ; unset argn ; argk=true
+      else
+        unset argk
+      fi
+
+      shift && continue
+    fi
+  else
+    if [[ -n "$argn" ]] ; then
+      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare $argn="${!argn} $1" || declare $argn="$1"
+
+      unset argn && shift && continue
+    fi
+  fi
+
+  argt="$argt $1" ; shift
+
+done
+
+[[ -n "$argn" ]] && declare $argn=true
+
+unset arg argn argm argk
+
+[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
+
+########################################################################################
