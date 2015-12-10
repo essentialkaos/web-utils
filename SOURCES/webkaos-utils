@@ -68,9 +68,7 @@ SHORT_ARGS="h:!help v:!version"
 # Main functions
 #
 # *: All arguments passed to script
-#
-# Code: none
-# Echo: none
+# 
 main() {
   if [[ $version || $ver ]] ; then
     about && exit 0
@@ -85,7 +83,7 @@ main() {
   shift 1
 
   case $cmd in
-    "req-gen")    genRequest $@    ;;
+    "csr-gen")    genCSR $@    ;;
     "hpkp-gen")   genHPKPHeader $@ ;;
     "ocsp-gen")   genOCSP $@       ;;
     "ocsp-check") checkOCSP $@     ;;
@@ -101,12 +99,10 @@ main() {
 # 1: Server cert or cert chain file (String)
 # 2: Issuer cert (String) [Optional]
 #
-# Code: None
-# Echo: None
 genOCSP() {
   local issuer_cert server_cert output
 
-  if [[ $# -le 1 ]] ; then
+  if [[ $# -eq 0 ]] ; then
     usage && doExit 0
   fi
 
@@ -118,11 +114,11 @@ genOCSP() {
   if isChain "$1" ; then
     server_cert=$(extractCertFromChain "$1" 1)
     issuer_cert=$(extractCertFromChain "$1" 2)
-    output="${$1//.crt/.oscp}"
+    output=$(echo "$1" | sed 's/-chain//' | sed 's/.crt/.ocsp/')
   else
     server_cert="$1"
     issuer_cert="$2"
-    output="${$2//.crt/.oscp}"
+    output=$(echo "$2" | sed 's/.crt/.ocsp/')
   fi
 
   if [[ ! -f $server_cert ]] ; then
@@ -146,8 +142,6 @@ genOCSP() {
 #
 # 1: Host and port (String)
 #
-# Code: None
-# Echo: None
 checkOCSP() {
   if [[ $# -eq 0 ]] ; then
     usage && exit 0
@@ -183,7 +177,7 @@ checkOCSP() {
 #
 # Code: None
 # Echo: None
-genRequest() {
+genCSR() {
   if [[ $# -eq 0 ]] ; then
     usage && doExit 0
   fi
@@ -196,9 +190,7 @@ genRequest() {
 # Generate HPKP for some request
 #
 # 1: Path to csr file (String)
-#
-# Code: None
-# Echo: None
+# 
 genHPKPHeader() {
   if [[ $# -eq 0 ]] ; then
     usage && doExit 0
@@ -236,7 +228,6 @@ genHPKPHeader() {
 # 3: Output name (String) [Optional]
 #
 # Code: Yes
-# Echo: None
 generateOCSPFile() {
   local issuer_cert="$1"
   local server_cert="$2"
@@ -261,7 +252,6 @@ generateOCSPFile() {
 # 1: Path to file (String)
 #
 # Code: Yes
-# Echo: none
 isChain() {
   local file="$1"
 
@@ -274,12 +264,34 @@ isChain() {
   return 0
 }
 
+# Extract certificate from chain to file
+#
+# 1: Path to chain file (String)
+# 2: Number of certificate in chain (Number)
+#
+# Echo: Path to temporary file with certificate (String)
+extractCertFromChain() {
+  local chain="$1"
+  local cert_num="$2"
+
+  local cert_start=$(grep -n "BEGIN CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
+  local cert_end=$(grep -n "END CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
+
+  if [[ -z "$cert_start" || -z "$cert_end" ]] ; then
+    return
+  fi
+
+  local tmp_file=$(mktemp -u $TMP_PATTERN)
+
+  cat $chain | sed -n ${cert_start},${cert_end}p > $tmp_file
+
+  echo $tmp_file
+}
+
 # Remove temporary data and exit with given exit code
 #
 # 1: Exit code (Number) [Optional]
 #
-# Code: none
-# Echo: none
 doExit() {
   local ec="${1:-0}"
 
@@ -304,7 +316,7 @@ usage() {
   show ""
   show "Commands" $BOLD
   show ""
-  show "  ${CL_BROWN}req-gen${CL_NORM} ${CL_GREY}host${CL_NORM}                      Generate RSA key and a certificate signing request"
+  show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM}                      Generate RSA key and a certificate signing request"
   show "  ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr-file${CL_NORM}                 Generate HTTP public key pinning (HPKP) header"
   show "  ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM}  Generate OCSP stapling file"
   show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM}                   Check OCSP response status for some host"
