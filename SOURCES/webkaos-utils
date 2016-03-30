@@ -6,7 +6,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.0"
+VER="1.1"
 
 ########################################################################################
 
@@ -22,36 +22,20 @@ CYAN=36
 GREY=37
 
 CL_NORM="\e[${NORM}m"
-CL_BOLD="\e[${BOLD}m"
-CL_UNLN="\e[${UNLN}m"
-CL_RED="\e[${RED}m"
-CL_GREEN="\e[${GREEN}m"
-CL_BROWN="\e[${BROWN}m"
-CL_BLUE="\e[${BLUE}m"
-CL_MAG="\e[${MAG}m"
-CL_CYAN="\e[${CYAN}m"
-CL_GREY="\e[${GREY}m"
-CL_BL_RED="\e[${RED};1m"
-CL_BL_GREEN="\e[${GREEN};1m"
-CL_BL_BROWN="\e[${BROWN};1m"
-CL_BL_BLUE="\e[${BLUE};1m"
-CL_BL_MAG="\e[${MAG};1m"
-CL_BL_CYAN="\e[${CYAN};1m"
-CL_BL_GREY="\e[${GREY};1m"
-CL_UL_RED="\e[${RED};4m"
-CL_UL_GREEN="\e[${GREEN};4m"
-CL_UL_BROWN="\e[${BROWN};4m"
-CL_UL_BLUE="\e[${BLUE};4m"
-CL_UL_MAG="\e[${MAG};4m"
-CL_UL_CYAN="\e[${CYAN};4m"
-CL_UL_GREY="\e[${GREY};4m"
-CL_BG_RED="\e[${RED};7m"
-CL_BG_GREEN="\e[${GREEN};7m"
-CL_BG_BROWN="\e[${BROWN};7m"
-CL_BG_BLUE="\e[${BLUE};7m"
-CL_BG_MAG="\e[${MAG};7m"
-CL_BG_CYAN="\e[${CYAN};7m"
-CL_BG_GREY="\e[${GREY};7m"
+CL_RED="\e[0;${RED};49m"
+CL_GREEN="\e[0;${GREEN};49m"
+CL_BROWN="\e[0;${BROWN};49m"
+CL_BLUE="\e[0;${BLUE};49m"
+CL_MAG="\e[0;${MAG};49m"
+CL_CYAN="\e[0;${CYAN};49m"
+CL_GREY="\e[0;${GREY};49m"
+CL_BL_RED="\e[1;${RED};49m"
+CL_BL_GREEN="\e[1;${GREEN};49m"
+CL_BL_BROWN="\e[1;${BROWN};49m"
+CL_BL_BLUE="\e[1;${BLUE};49m"
+CL_BL_MAG="\e[1;${MAG};49m"
+CL_BL_CYAN="\e[1;${CYAN};49m"
+CL_BL_GREY="\e[1;${GREY};49m"
 
 ########################################################################################
 
@@ -68,7 +52,7 @@ SHORT_ARGS="h:!help v:!version"
 # Main functions
 #
 # *: All arguments passed to script
-# 
+#
 main() {
   if [[ $version || $ver ]] ; then
     about && exit 0
@@ -118,7 +102,7 @@ genOCSP() {
   else
     server_cert="$1"
     issuer_cert="$2"
-    output=$(echo "$2" | sed 's/.crt/.ocsp/')
+    output=$(echo "$1" | sed 's/.crt/.ocsp/')
   fi
 
   if [[ ! -f $server_cert ]] ; then
@@ -148,19 +132,9 @@ checkOCSP() {
   fi
 
   local host="$1"
-
-  if [[ $(echo "$host" | grep ":443") == "" ]] ; then
-    host="$host:443"
-  fi
-
-  local sn
-
-  if [[ -n $servername ]] ; then
-    sn="-servername $servername"
-  fi
-
+  local servername="${2:-$host}"
   local tmp_file=$(mktemp -u $TMP_PATTERN)
-  local status=$(openssl s_client $sn -connect $host -tls1 -tlsextdebug -status 2>&1 < /dev/null &> $tmp_file)
+  local status=$(openssl s_client -servername $servername -connect $host:443 -tls1 -tlsextdebug -status 2>&1 < /dev/null &> $tmp_file)
 
   if [[ $(grep 'OCSP Response Status: successful' $tmp_file) == "" ]] ; then
     show "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
@@ -171,7 +145,7 @@ checkOCSP() {
   grep -A 14 'OCSP Response Data:' $tmp_file
 }
 
-# Generate signing request 
+# Generate signing request
 #
 # 1: Hostname (String)
 #
@@ -190,33 +164,42 @@ genCSR() {
 # Generate HPKP for some request
 #
 # 1: Path to csr file (String)
-# 
+#
 genHPKPHeader() {
   if [[ $# -eq 0 ]] ; then
     usage && doExit 0
   fi
 
-  local csr="$1"
-  
-  if [[ ! -f $csr ]] ; then
-    show "File $csr is not exist" $RED
+  local main_file="$1"
+  local backup_file="$2"
+
+  local main_pin backup_pin
+
+  if [[ ! -r $main_file ]] ; then
+    show "File $main_file is not readable" $RED
     doExit 1
   fi
 
-  local csr_hash=$(openssl req -inform pem -pubkey -noout < $csr | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64)
+  main_pin=$(generateHPKHHash "$main_file")
 
-  if [[ -z "$csr_hash" ]] ; then
+  if [[ -n "$backup_file" ]] ; then
+    backup_pin=$(generateHPKHHash "$backup_file")
+  fi
+
+  if [[ -z "$main_pin" ]] ; then
     show "Can't generate HPKP for given request" $RED
     doExit 1
   fi
 
-  show ""
-  show "HPKP Header successfully generated!" $GREEN
-  show "Add this header to server part of your config file."
+  show "\n${CL_BL_GREEN}HPKP Header successfully generated!${CL_GREEN} Add this header as part of your config file.${CL_NORM}"
 
-  show ""
-  show "add_header \"Public-Key-Pins\" \"max-age=2592000; pin-sha256=$csr_hash\";"
-  show ""
+  if [[ -z "$backup_pin" ]] ; then
+    show "\nadd_header Public-Key-Pins 'pin-sha256=\"$main_pin\";max-age=86400';\n"
+  else
+    show "\nadd_header Public-Key-Pins 'pin-sha256=\"$main_pin\";pin-sha256=\"$backup_pin\";max-age=86400';\n"
+  fi
+
+  show "More info: https://developer.mozilla.org/en-US/docs/Web/Security/Public_Key_Pinning\n" $GREY
 }
 
 ########################################################################################
@@ -245,6 +228,26 @@ generateOCSPFile() {
   show "OCSP stapling file saved as $output" $GREEN
 
   return 0
+}
+
+# Generate HPKP hash from given file
+#
+# 1: Key / CRT / CSR file
+#
+# Code: No
+# Echo: Hash (String)
+generateHPKHHash() {
+  local file="$1"
+
+  if [[ $file == *.key ]] ; then
+    openssl rsa -in $file -outform der -pubout 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  elif [[ $file == *.csr ]] ; then
+    openssl req -in $file -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  elif [[ $file == *.crt ]] ; then
+    openssl x509 -in $file -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  else
+    echo ""
+  fi
 }
 
 # Check if given file is chain
@@ -312,19 +315,36 @@ show() {
 
 usage() {
   show ""
-  show "${CL_BOLD}Usage:${CL_NORM} wu ${CL_BROWN}command${CL_NORM} args..."
+  show "${CL_BOLD}Usage:${CL_NORM} webkaos-utils ${CL_BROWN}command${CL_NORM} args..."
   show ""
   show "Commands" $BOLD
   show ""
-  show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM}                      Generate RSA key and a certificate signing request"
-  show "  ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr-file${CL_NORM}                 Generate HTTP public key pinning (HPKP) header"
-  show "  ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM}  Generate OCSP stapling file"
-  show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM}                   Check OCSP response status for some host"
+  show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM}                         Generate RSA key and a certificate signing request"
+  show "  ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr|key|crt backup${CL_NORM}          Generate HTTP public key pinning (HPKP) header"
+  show "  ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM}     Generate OCSP stapling file"
+  show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM}                      Check OCSP response status for some host"
   show ""
   show "Options" $BOLD
   show ""
   show "  ${CL_GREEN}--help, -h${CL_NORM}                      Show this help message"
   show "  ${CL_GREEN}--version, -v${CL_NORM}                   Show information about version"
+  show ""
+  show "Examples" $BOLD
+  show ""
+  show "  webkaos-utils csr-gen domain.com"
+  show "  Generate RSA key and a certificate signing request for domain.com" $GREY
+  show ""
+  show "  webkaos-utils hpkp-gen domain.com.csr domain.com.backup.key"
+  show "  Generate HTTP public key pinning (HPKP) header with server and backup pins" $GREY
+  show ""
+  show "  webkaos-utils ocsp-gen sever.crt issuer.crt"
+  show "  Generate OCSP stapling file using server and issuer certificates" $GREY
+  show ""
+  show "  webkaos-utils ocsp-gen sever-chain.crt"
+  show "  Generate OCSP stapling file using certificate chain" $GREY
+  show ""
+  show "  webkaos-utils ocsp-check essentialkaos.com"
+  show "  Check OCSP response status for essentialkaos.com" $GREY
   show ""
 }
 
@@ -332,8 +352,8 @@ about() {
   show ""
   show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Helpers for working with webkaos server"
   show ""
-  show "Copyright (C) 2009-2015 ESSENTIAL KAOS" $BOLD
-  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol?en>" $BOLD
+  show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $GREY
+  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol?en>" $GREY
   show ""
 }
 
