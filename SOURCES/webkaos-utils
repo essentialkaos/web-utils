@@ -102,7 +102,7 @@ genOCSP() {
   else
     server_cert="$1"
     issuer_cert="$2"
-    output=$(echo "$2" | sed 's/.crt/.ocsp/')
+    output=$(echo "$1" | sed 's/.crt/.ocsp/')
   fi
 
   if [[ ! -f $server_cert ]] ; then
