@@ -132,19 +132,9 @@ checkOCSP() {
   fi
 
   local host="$1"
-
-  if [[ $(echo "$host" | grep ":443") == "" ]] ; then
-    host="$host:443"
-  fi
-
-  local sn
-
-  if [[ -n $servername ]] ; then
-    sn="-servername $servername"
-  fi
-
+  local servername="${2:-$host}"
   local tmp_file=$(mktemp -u $TMP_PATTERN)
-  local status=$(openssl s_client $sn -connect $host -tls1 -tlsextdebug -status 2>&1 < /dev/null &> $tmp_file)
+  local status=$(openssl s_client -servername $servername -connect $host:443 -tls1 -tlsextdebug -status 2>&1 < /dev/null &> $tmp_file)
 
   if [[ $(grep 'OCSP Response Status: successful' $tmp_file) == "" ]] ; then
     show "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
