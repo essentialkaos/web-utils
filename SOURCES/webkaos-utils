@@ -329,6 +329,23 @@ usage() {
   show "  ${CL_GREEN}--help, -h${CL_NORM}                      Show this help message"
   show "  ${CL_GREEN}--version, -v${CL_NORM}                   Show information about version"
   show ""
+  show "Examples" $BOLD
+  show ""
+  show "  webkaos-utils csr-gen domain.com"
+  show "  Generate RSA key and a certificate signing request for domain.com" $GREY
+  show ""
+  show "  webkaos-utils hpkp-gen domain.com.csr domain.com.backup.key"
+  show "  Generate HTTP public key pinning (HPKP) header with server and backup pins" $GREY
+  show ""
+  show "  webkaos-utils ocsp-gen sever.crt issuer.crt"
+  show "  Generate OCSP stapling file using server and issuer certificates" $GREY
+  show ""
+  show "  webkaos-utils ocsp-gen sever-chain.crt"
+  show "  Generate OCSP stapling file using certificate chain" $GREY
+  show ""
+  show "  webkaos-utils ocsp-check essentialkaos.com"
+  show "  Check OCSP response status for essentialkaos.com" $GREY
+  show ""
 }
 
 about() {
