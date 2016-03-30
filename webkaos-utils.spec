@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.0
+Version:         1.1
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -48,5 +48,8 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Thu Mar 31 2016 Anton Novojilov <andy@essentialkaos.com> - 1.1-0
+- Improved HPKP generation
+
 * Tue Dec 08 2015 Anton Novojilov <andy@essentialkaos.com> - 1.0-0
 - Initial release
