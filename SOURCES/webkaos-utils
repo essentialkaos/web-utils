@@ -6,7 +6,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.1"
+VER="1.2.0"
 
 ########################################################################################
 
@@ -20,6 +20,7 @@ BLUE=34
 MAG=35
 CYAN=36
 GREY=37
+DARK=90
 
 CL_NORM="\e[${NORM}m"
 CL_RED="\e[0;${RED};49m"
@@ -29,6 +30,7 @@ CL_BLUE="\e[0;${BLUE};49m"
 CL_MAG="\e[0;${MAG};49m"
 CL_CYAN="\e[0;${CYAN};49m"
 CL_GREY="\e[0;${GREY};49m"
+CL_DARK="\e[0;${DARK};49m"
 CL_BL_RED="\e[1;${RED};49m"
 CL_BL_GREEN="\e[1;${GREEN};49m"
 CL_BL_BROWN="\e[1;${BROWN};49m"
@@ -36,6 +38,7 @@ CL_BL_BLUE="\e[1;${BLUE};49m"
 CL_BL_MAG="\e[1;${MAG};49m"
 CL_BL_CYAN="\e[1;${CYAN};49m"
 CL_BL_GREY="\e[1;${GREY};49m"
+CL_BL_DARK="\e[1;${DARK};49m"
 
 ########################################################################################
 
@@ -199,7 +202,7 @@ genHPKPHeader() {
     show "\nadd_header Public-Key-Pins 'pin-sha256=\"$main_pin\";pin-sha256=\"$backup_pin\";max-age=86400';\n"
   fi
 
-  show "More info: https://developer.mozilla.org/en-US/docs/Web/Security/Public_Key_Pinning\n" $GREY
+  show "More info: https://developer.mozilla.org/en-US/docs/Web/Security/Public_Key_Pinning\n" $DARK
 }
 
 ########################################################################################
@@ -319,32 +322,35 @@ usage() {
   show ""
   show "Commands" $BOLD
   show ""
-  show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM}                         Generate RSA key and a certificate signing request"
-  show "  ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr|key|crt backup${CL_NORM}          Generate HTTP public key pinning (HPKP) header"
-  show "  ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM}     Generate OCSP stapling file"
-  show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM}                      Check OCSP response status for some host"
+  show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate RSA key and a certificate signing request"
+  show "${CL_DARK}┌ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
+  show "${CL_DARK}│ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
+  show "${CL_DARK}└ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
+  show "${CL_DARK}┌ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM} ${CL_DARK}..${CL_NORM} Generate OCSP stapling file from server certificate"
+  show "${CL_DARK}└ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
+  show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...................${CL_NORM} Check OCSP response status for some host"
   show ""
   show "Options" $BOLD
   show ""
-  show "  ${CL_GREEN}--help, -h${CL_NORM}                      Show this help message"
-  show "  ${CL_GREEN}--version, -v${CL_NORM}                   Show information about version"
+  show "  ${CL_GREEN}--help, -h${CL_NORM}       Show this help message"
+  show "  ${CL_GREEN}--version, -v${CL_NORM}    Show information about version"
   show ""
   show "Examples" $BOLD
   show ""
   show "  webkaos-utils csr-gen domain.com"
-  show "  Generate RSA key and a certificate signing request for domain.com" $GREY
+  show "  Generate RSA key and a certificate signing request for domain.com" $DARK
   show ""
   show "  webkaos-utils hpkp-gen domain.com.csr domain.com.backup.key"
-  show "  Generate HTTP public key pinning (HPKP) header with server and backup pins" $GREY
+  show "  Generate HTTP public key pinning (HPKP) header with server and backup pins" $DARK
   show ""
   show "  webkaos-utils ocsp-gen sever.crt issuer.crt"
-  show "  Generate OCSP stapling file using server and issuer certificates" $GREY
+  show "  Generate OCSP stapling file using server and issuer certificates" $DARK
   show ""
   show "  webkaos-utils ocsp-gen sever-chain.crt"
-  show "  Generate OCSP stapling file using certificate chain" $GREY
+  show "  Generate OCSP stapling file using certificate chain" $DARK
   show ""
   show "  webkaos-utils ocsp-check essentialkaos.com"
-  show "  Check OCSP response status for essentialkaos.com" $GREY
+  show "  Check OCSP response status for essentialkaos.com" $DARK
   show ""
 }
 
@@ -352,8 +358,8 @@ about() {
   show ""
   show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Helpers for working with webkaos server"
   show ""
-  show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $GREY
-  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol?en>" $GREY
+  show "Copyright (C) 2009-2016 ESSENTIAL KAOS" $DARK
+  show "Essential Kaos Open Source License <https://essentialkaos.com/ekol>" $DARK
   show ""
 }
 

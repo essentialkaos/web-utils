@@ -2,12 +2,11 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.1
+Version:         1.2.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
-URL:             https://essentialkaos.com
-Vendor:          ESSENTIAL KAOS
+URL:             https://github.com/essentialkaos/webkaos-utils
 
 Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
 
@@ -48,6 +47,10 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Sun Oct 30 2016 Anton Novojilov <andy@essentialkaos.com> - 1.2.0-0
+- Dark grey color usage for some output
+- Improved help output
+
 * Thu Mar 31 2016 Anton Novojilov <andy@essentialkaos.com> - 1.1-0
 - Improved HPKP generation
 
