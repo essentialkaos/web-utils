@@ -6,7 +6,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.2.0"
+VER="1.3.0"
 
 ########################################################################################
 
@@ -47,8 +47,8 @@ TMP_PATTERN="/tmp/_wu.XXXXXXXXX"
 
 ########################################################################################
 
-SUPPORTED_ARGS="!help !usage !version !ver"
-SHORT_ARGS="h:!help v:!version"
+SUPPORTED_ARGS="!help !usage !version !ver !no_colors"
+SHORT_ARGS="h:!help v:!version nc:!no_colors"
 
 ########################################################################################
 
@@ -57,6 +57,12 @@ SHORT_ARGS="h:!help v:!version"
 # *: All arguments passed to script
 #
 main() {
+  if [[ ! -t 1 || -n "$no_colors" ]] ; then
+    unset NORM BOLD UNLN RED GREEN BROWN BLUE MAG CYAN GREY DARK
+    unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_BROWN CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
+    unset CL_BL_RED CL_BL_GREEN CL_BL_BROWN CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_BL_DARK
+  fi
+
   if [[ $version || $ver ]] ; then
     about && exit 0
   fi
@@ -219,9 +225,9 @@ generateOCSPFile() {
   local server_cert="$2"
   local output="$3"
 
-  local url=$(openssl x509 -in $server_cert -text | grep "OCSP - URI:" | cut -d: -f2,3)
+  local url=$(openssl x509 -in "$server_cert" -text | grep "OCSP - URI:" | cut -d: -f2,3)
 
-  openssl ocsp -noverify -no_nonce -respout $output -issuer $issuer_cert -cert $server_cert -url $url &> /dev/null
+  openssl ocsp -noverify -no_nonce -respout "$output" -issuer "$issuer_cert" -cert "$server_cert" -url "$url" &> /dev/null
 
   if [[ $? -ne 0 ]] ; then
     show "Error while OCSP stapling file generation" $RED
@@ -242,12 +248,12 @@ generateOCSPFile() {
 generateHPKHHash() {
   local file="$1"
 
-  if [[ $file == *.key ]] ; then
-    openssl rsa -in $file -outform der -pubout 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
-  elif [[ $file == *.csr ]] ; then
-    openssl req -in $file -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
-  elif [[ $file == *.crt ]] ; then
-    openssl x509 -in $file -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  if [[ "$file" == *.key ]] ; then
+    openssl rsa -in "$file" -outform der -pubout 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  elif [[ "$file" == *.csr ]] ; then
+    openssl req -in "$file" -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  elif [[ "$file" == *.crt ]] ; then
+    openssl x509 -in "$file" -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
   else
     echo ""
   fi
@@ -263,7 +269,7 @@ isChain() {
 
   [[ ! -f $file ]] && return 1
 
-  if [[ $(cat $file | grep "BEGIN CERTIFICATE" | wc -l) -le 1 ]] ; then
+  if [[ $(grep "BEGIN CERTIFICATE" $file | wc -l) -le 1 ]] ; then
     return 1
   fi
 
@@ -289,9 +295,9 @@ extractCertFromChain() {
 
   local tmp_file=$(mktemp -u $TMP_PATTERN)
 
-  cat $chain | sed -n ${cert_start},${cert_end}p > $tmp_file
+  cat "$chain" | sed -n ${cert_start},${cert_end}p > "$tmp_file"
 
-  echo $tmp_file
+  echo "$tmp_file"
 }
 
 # Remove temporary data and exit with given exit code
@@ -309,10 +315,10 @@ doExit() {
 ########################################################################################
 
 show() {
-  if [[ -n "$2" ]] ; then
-    echo -e "\e[${2}m${1}${CL_NORM}"
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e "\e[${2}m${1}\e[0m"
   else
-    echo -e "$@"
+    echo -e "$*"
   fi
 }
 
@@ -322,18 +328,37 @@ usage() {
   show ""
   show "Commands" $BOLD
   show ""
-  show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate RSA key and a certificate signing request"
-  show "${CL_DARK}┌ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
-  show "${CL_DARK}│ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
-  show "${CL_DARK}└ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
-  show "${CL_DARK}┌ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM} ${CL_DARK}..${CL_NORM} Generate OCSP stapling file from server certificate"
-  show "${CL_DARK}└ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
-  show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...................${CL_NORM} Check OCSP response status for some host"
+
+  if [[ -n "$DARK" ]] ; then
+    show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate RSA key and a certificate signing request"
+    show "${CL_DARK}┌ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
+    show "${CL_DARK}│ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
+    show "${CL_DARK}└ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
+    show "${CL_DARK}┌ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM} ${CL_DARK}..${CL_NORM} Generate OCSP stapling file from server certificate"
+    show "${CL_DARK}└ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
+    show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...................${CL_NORM} Check OCSP response status for some host"
+  else
+    show "  csr-gen host                        Generate RSA key and a certificate signing request"
+    show "┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file"
+    show "│ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file"
+    show "└ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file"
+    show "┌ ocsp-gen server-cert issuer-cert    Generate OCSP stapling file from server certificate"
+    show "└ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain"
+    show "  ocsp-check host                     Check OCSP response status for some host"
+  fi
+
   show ""
   show "Options" $BOLD
   show ""
-  show "  ${CL_GREEN}--help, -h${CL_NORM}       Show this help message"
-  show "  ${CL_GREEN}--version, -v${CL_NORM}    Show information about version"
+  
+  if [[ -n "$DARK" ]] ; then
+    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}.....${CL_NORM} Show this help message"
+    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}..${CL_NORM} Show information about version"
+  else
+    show "  --help, -h       Show this help message"
+    show "  --version, -v    Show information about version"
+  fi
+
   show ""
   show "Examples" $BOLD
   show ""
