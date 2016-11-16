@@ -273,7 +273,7 @@ isChain() {
 
   [[ ! -f $file ]] && return 1
 
-  if [[ $(grep "BEGIN CERTIFICATE" $file | wc -l) -le 1 ]] ; then
+  if [[ $(grep "BEGIN CERTIFICATE" "$file" | wc -l) -le 1 ]] ; then
     return 1
   fi
 
@@ -292,8 +292,8 @@ extractCertFromChain() {
   chain="$1"
   cert_num="$2"
 
-  cert_start=$(grep -n "BEGIN CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
-  cert_end=$(grep -n "END CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
+  cert_start=$(grep -n "BEGIN CERTIFICATE" "$chain" | cut -f1 -d: | sed -n "${cert_num}p")
+  cert_end=$(grep -n "END CERTIFICATE" "$chain" | cut -f1 -d: | sed -n "${cert_num}p")
 
   if [[ -z "$cert_start" || -z "$cert_end" ]] ; then
     return
@@ -315,7 +315,7 @@ doExit() {
 
   rm -f "${TMP_PATTERN//XXXXXXXXX/}*"
 
-  exit $ec
+  exit "$ec"
 }
 
 ########################################################################################
@@ -409,7 +409,7 @@ argv="$*" ; argt=""
 
 while [[ -n "$1" ]] ; do
   if [[ "$1" =~ \  && -n "$argn" ]] ; then
-    declare $argn="$1"
+    declare "$argn=$1"
 
     unset argn && shift && continue
   elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
@@ -425,7 +425,7 @@ while [[ -n "$1" ]] ; do
     if [[ -z "$argn" ]] ; then
       argn=$arg
     else
-      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
       argn=$arg
     fi
 
@@ -435,7 +435,7 @@ while [[ -n "$1" ]] ; do
     fi
 
     if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
-      declare $argn=true ; unset argn ; argk=true
+      declare "$argn=true" ; unset argn ; argk=true
     else
       unset argk
     fi
@@ -454,7 +454,7 @@ while [[ -n "$1" ]] ; do
         shift && continue
       fi
 
-      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare $argm="${!argm} ${arg[@]:1:99}" || declare $argm="${arg[@]:1:99}"
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[@]:1:99}" || declare "$argm=${arg[@]:1:99}"
 
       unset argm && shift && continue
     else
@@ -463,7 +463,7 @@ while [[ -n "$1" ]] ; do
       if [[ -z "$argn" ]] ; then
         argn=$arg
       else
-        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
         argn=$arg
       fi
 
@@ -473,7 +473,7 @@ while [[ -n "$1" ]] ; do
       fi
 
       if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
-        declare $argn=true ; unset argn ; argk=true
+        declare "$argn=true" ; unset argn ; argk=true
       else
         unset argk
       fi
@@ -482,7 +482,7 @@ while [[ -n "$1" ]] ; do
     fi
   else
     if [[ -n "$argn" ]] ; then
-      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare $argn="${!argn} $1" || declare $argn="$1"
+      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare "$argn=${!argn} $1" || declare "$argn=$1"
 
       unset argn && shift && continue
     fi
@@ -492,7 +492,7 @@ while [[ -n "$1" ]] ; do
 
 done
 
-[[ -n "$argn" ]] && declare $argn=true
+[[ -n "$argn" ]] && declare "$argn=true"
 
 unset arg argn argm argk
 
