@@ -1,8 +1,8 @@
-### WEBKAOS-Utils
+## WEBKAOS-Utils [![Code Climate](https://codeclimate.com/github/essentialkaos/webkaos-utils/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/webkaos-utils)
 
 `webkaos-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
 
-#### Usage
+### Usage
 
 ```
 Usage: webkaos-utils command args...
@@ -41,6 +41,6 @@ Examples
 
 ```
 
-#### License
+### License
 
 [EKOL](https://essentialkaos.com/ekol)

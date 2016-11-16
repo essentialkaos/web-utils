@@ -6,7 +6,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.2.0"
+VER="1.3.0"
 
 ########################################################################################
 
@@ -47,8 +47,8 @@ TMP_PATTERN="/tmp/_wu.XXXXXXXXX"
 
 ########################################################################################
 
-SUPPORTED_ARGS="!help !usage !version !ver"
-SHORT_ARGS="h:!help v:!version"
+SUPPORTED_ARGS="!help !usage !version !ver !no_colors"
+SHORT_ARGS="h:!help v:!version nc:!no_colors"
 
 ########################################################################################
 
@@ -57,6 +57,12 @@ SHORT_ARGS="h:!help v:!version"
 # *: All arguments passed to script
 #
 main() {
+  if [[ ! -t 1 || -n "$no_colors" ]] ; then
+    unset NORM BOLD UNLN RED GREEN BROWN BLUE MAG CYAN GREY DARK
+    unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_BROWN CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
+    unset CL_BL_RED CL_BL_GREEN CL_BL_BROWN CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_BL_DARK
+  fi
+
   if [[ $version || $ver ]] ; then
     about && exit 0
   fi
@@ -70,10 +76,10 @@ main() {
   shift 1
 
   case $cmd in
-    "csr-gen")    genCSR $@    ;;
-    "hpkp-gen")   genHPKPHeader $@ ;;
-    "ocsp-gen")   genOCSP $@       ;;
-    "ocsp-check") checkOCSP $@     ;;
+    "csr-gen")    genCSR "$@"        ;;
+    "hpkp-gen")   genHPKPHeader "$@" ;;
+    "ocsp-gen")   genOCSP "$@"       ;;
+    "ocsp-check") checkOCSP "$@"     ;;
     *) show "Unknown command $cmd" $RED
        doExit 1 ;;
   esac
@@ -134,18 +140,20 @@ checkOCSP() {
     usage && exit 0
   fi
 
-  local host="$1"
-  local servername="${2:-$host}"
-  local tmp_file=$(mktemp -u $TMP_PATTERN)
-  local status=$(openssl s_client -servername $servername -connect $host:443 -tls1 -tlsextdebug -status 2>&1 < /dev/null &> $tmp_file)
+  local host server_name tmp_file status
 
-  if [[ $(grep 'OCSP Response Status: successful' $tmp_file) == "" ]] ; then
+  host="$1"
+  server_name="${2:-$host}"
+  tmp_file=$(mktemp -u "$TMP_PATTERN")
+  status=$(openssl s_client -servername "$server_name" -connect "$host:443" -tls1 -tlsextdebug -status 2>&1 < /dev/null &> "$tmp_file")
+
+  if [[ $(grep 'OCSP Response Status: successful' "$tmp_file") == "" ]] ; then
     show "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
     doExit 1
   fi
 
   show "OCSP Response Status: ${CL_GREEN}Success${CL_NORM}"
-  grep -A 14 'OCSP Response Data:' $tmp_file
+  grep -A 14 'OCSP Response Data:' "$tmp_file"
 }
 
 # Generate signing request
@@ -161,7 +169,7 @@ genCSR() {
 
   local host="$1"
 
-  openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout ${host}.key -out ${host}.csr
+  openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
 }
 
 # Generate HPKP for some request
@@ -173,10 +181,10 @@ genHPKPHeader() {
     usage && doExit 0
   fi
 
-  local main_file="$1"
-  local backup_file="$2"
+  local main_file backup_file main_pin backup_pin
 
-  local main_pin backup_pin
+  main_file="$1"
+  backup_file="$2"
 
   if [[ ! -r $main_file ]] ; then
     show "File $main_file is not readable" $RED
@@ -215,13 +223,15 @@ genHPKPHeader() {
 #
 # Code: Yes
 generateOCSPFile() {
-  local issuer_cert="$1"
-  local server_cert="$2"
-  local output="$3"
+  local issuer_cert server_cert output url
 
-  local url=$(openssl x509 -in $server_cert -text | grep "OCSP - URI:" | cut -d: -f2,3)
+  issuer_cert="$1"
+  server_cert="$2"
+  output="$3"
 
-  openssl ocsp -noverify -no_nonce -respout $output -issuer $issuer_cert -cert $server_cert -url $url &> /dev/null
+  url=$(openssl x509 -in "$server_cert" -text | grep "OCSP - URI:" | cut -d: -f2,3)
+
+  openssl ocsp -noverify -no_nonce -respout "$output" -issuer "$issuer_cert" -cert "$server_cert" -url "$url" &> /dev/null
 
   if [[ $? -ne 0 ]] ; then
     show "Error while OCSP stapling file generation" $RED
@@ -242,12 +252,12 @@ generateOCSPFile() {
 generateHPKHHash() {
   local file="$1"
 
-  if [[ $file == *.key ]] ; then
-    openssl rsa -in $file -outform der -pubout 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
-  elif [[ $file == *.csr ]] ; then
-    openssl req -in $file -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
-  elif [[ $file == *.crt ]] ; then
-    openssl x509 -in $file -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  if [[ "$file" == *.key ]] ; then
+    openssl rsa -in "$file" -outform der -pubout 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  elif [[ "$file" == *.csr ]] ; then
+    openssl req -in "$file" -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
+  elif [[ "$file" == *.crt ]] ; then
+    openssl x509 -in "$file" -pubkey -noout 2>/dev/null | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -binary | openssl enc -base64
   else
     echo ""
   fi
@@ -263,7 +273,7 @@ isChain() {
 
   [[ ! -f $file ]] && return 1
 
-  if [[ $(cat $file | grep "BEGIN CERTIFICATE" | wc -l) -le 1 ]] ; then
+  if [[ $(grep -c "BEGIN CERTIFICATE" "$file") -le 1 ]] ; then
     return 1
   fi
 
@@ -277,21 +287,23 @@ isChain() {
 #
 # Echo: Path to temporary file with certificate (String)
 extractCertFromChain() {
-  local chain="$1"
-  local cert_num="$2"
+  local chain cert_num cert_start cert_end tmp_file
 
-  local cert_start=$(grep -n "BEGIN CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
-  local cert_end=$(grep -n "END CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
+  chain="$1"
+  cert_num="$2"
+
+  cert_start=$(grep -n "BEGIN CERTIFICATE" "$chain" | cut -f1 -d: | sed -n "${cert_num}p")
+  cert_end=$(grep -n "END CERTIFICATE" "$chain" | cut -f1 -d: | sed -n "${cert_num}p")
 
   if [[ -z "$cert_start" || -z "$cert_end" ]] ; then
     return
   fi
 
-  local tmp_file=$(mktemp -u $TMP_PATTERN)
+  tmp_file=$(mktemp -u $TMP_PATTERN)
 
-  cat $chain | sed -n ${cert_start},${cert_end}p > $tmp_file
+  cat "$chain" | sed -n "${cert_start},${cert_end}p" > "$tmp_file"
 
-  echo $tmp_file
+  echo "$tmp_file"
 }
 
 # Remove temporary data and exit with given exit code
@@ -303,16 +315,16 @@ doExit() {
 
   rm -f "${TMP_PATTERN//XXXXXXXXX/}*"
 
-  exit $ec
+  exit "$ec"
 }
 
 ########################################################################################
 
 show() {
-  if [[ -n "$2" ]] ; then
-    echo -e "\e[${2}m${1}${CL_NORM}"
+  if [[ -n "$2" && -z "$no_colors" ]] ; then
+    echo -e "\e[${2}m${1}\e[0m"
   else
-    echo -e "$@"
+    echo -e "$*"
   fi
 }
 
@@ -322,18 +334,37 @@ usage() {
   show ""
   show "Commands" $BOLD
   show ""
-  show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate RSA key and a certificate signing request"
-  show "${CL_DARK}┌ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
-  show "${CL_DARK}│ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
-  show "${CL_DARK}└ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
-  show "${CL_DARK}┌ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM} ${CL_DARK}..${CL_NORM} Generate OCSP stapling file from server certificate"
-  show "${CL_DARK}└ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
-  show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...................${CL_NORM} Check OCSP response status for some host"
+
+  if [[ -n "$DARK" ]] ; then
+    show "  ${CL_BROWN}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate RSA key and a certificate signing request"
+    show "${CL_DARK}┌ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
+    show "${CL_DARK}│ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
+    show "${CL_DARK}└ ${CL_BROWN}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
+    show "${CL_DARK}┌ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM} ${CL_DARK}..${CL_NORM} Generate OCSP stapling file from server certificate"
+    show "${CL_DARK}└ ${CL_BROWN}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
+    show "  ${CL_BROWN}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...................${CL_NORM} Check OCSP response status for some host"
+  else
+    show "  csr-gen host                        Generate RSA key and a certificate signing request"
+    show "┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file"
+    show "│ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file"
+    show "└ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file"
+    show "┌ ocsp-gen server-cert issuer-cert    Generate OCSP stapling file from server certificate"
+    show "└ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain"
+    show "  ocsp-check host                     Check OCSP response status for some host"
+  fi
+
   show ""
   show "Options" $BOLD
   show ""
-  show "  ${CL_GREEN}--help, -h${CL_NORM}       Show this help message"
-  show "  ${CL_GREEN}--version, -v${CL_NORM}    Show information about version"
+  
+  if [[ -n "$DARK" ]] ; then
+    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}.....${CL_NORM} Show this help message"
+    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}..${CL_NORM} Show information about version"
+  else
+    show "  --help, -h       Show this help message"
+    show "  --version, -v    Show information about version"
+  fi
+
   show ""
   show "Examples" $BOLD
   show ""
@@ -378,7 +409,7 @@ argv="$*" ; argt=""
 
 while [[ -n "$1" ]] ; do
   if [[ "$1" =~ \  && -n "$argn" ]] ; then
-    declare $argn="$1"
+    declare "$argn=$1"
 
     unset argn && shift && continue
   elif [[ $1 =~ ^-{1}[a-zA-Z0-9]{1,2}+.*$ ]] ; then
@@ -394,7 +425,7 @@ while [[ -n "$1" ]] ; do
     if [[ -z "$argn" ]] ; then
       argn=$arg
     else
-      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+      [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
       argn=$arg
     fi
 
@@ -404,7 +435,7 @@ while [[ -n "$1" ]] ; do
     fi
 
     if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
-      declare $argn=true ; unset argn ; argk=true
+      declare "$argn=true" ; unset argn ; argk=true
     else
       unset argk
     fi
@@ -423,7 +454,7 @@ while [[ -n "$1" ]] ; do
         shift && continue
       fi
 
-      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare $argm="${!argm} ${arg[@]:1:99}" || declare $argm="${arg[@]:1:99}"
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[@]:1:99}" || declare "$argm=${arg[@]:1:99}"
 
       unset argm && shift && continue
     else
@@ -432,7 +463,7 @@ while [[ -n "$1" ]] ; do
       if [[ -z "$argn" ]] ; then
         argn=$arg
       else
-        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare $argn=true
+        [[ -z "$argk" ]] && ( showArgValWarn "--$argn" 2> /dev/null || : ) || declare "$argn=true"
         argn=$arg
       fi
 
@@ -442,7 +473,7 @@ while [[ -n "$1" ]] ; do
       fi
 
       if [[ ${BASH_REMATCH[0]:0:1} == "!" ]] ; then
-        declare $argn=true ; unset argn ; argk=true
+        declare "$argn=true" ; unset argn ; argk=true
       else
         unset argk
       fi
@@ -451,7 +482,7 @@ while [[ -n "$1" ]] ; do
     fi
   else
     if [[ -n "$argn" ]] ; then
-      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare $argn="${!argn} $1" || declare $argn="$1"
+      [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare "$argn=${!argn} $1" || declare "$argn=$1"
 
       unset argn && shift && continue
     fi
@@ -461,7 +492,7 @@ while [[ -n "$1" ]] ; do
 
 done
 
-[[ -n "$argn" ]] && declare $argn=true
+[[ -n "$argn" ]] && declare "$argn=true"
 
 unset arg argn argm argk
 
