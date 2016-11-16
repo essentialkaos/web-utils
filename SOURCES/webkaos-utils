@@ -76,10 +76,10 @@ main() {
   shift 1
 
   case $cmd in
-    "csr-gen")    genCSR $@    ;;
-    "hpkp-gen")   genHPKPHeader $@ ;;
-    "ocsp-gen")   genOCSP $@       ;;
-    "ocsp-check") checkOCSP $@     ;;
+    "csr-gen")    genCSR "$@"        ;;
+    "hpkp-gen")   genHPKPHeader "$@" ;;
+    "ocsp-gen")   genOCSP "$@"       ;;
+    "ocsp-check") checkOCSP "$@"     ;;
     *) show "Unknown command $cmd" $RED
        doExit 1 ;;
   esac
@@ -140,18 +140,20 @@ checkOCSP() {
     usage && exit 0
   fi
 
-  local host="$1"
-  local servername="${2:-$host}"
-  local tmp_file=$(mktemp -u $TMP_PATTERN)
-  local status=$(openssl s_client -servername $servername -connect $host:443 -tls1 -tlsextdebug -status 2>&1 < /dev/null &> $tmp_file)
+  local host server_name tmp_file status
 
-  if [[ $(grep 'OCSP Response Status: successful' $tmp_file) == "" ]] ; then
+  host="$1"
+  server_name="${2:-$host}"
+  tmp_file=$(mktemp -u "$TMP_PATTERN")
+  status=$(openssl s_client -servername "$server_name" -connect "$host:443" -tls1 -tlsextdebug -status 2>&1 < /dev/null &> "$tmp_file")
+
+  if [[ $(grep 'OCSP Response Status: successful' "$tmp_file") == "" ]] ; then
     show "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
     doExit 1
   fi
 
   show "OCSP Response Status: ${CL_GREEN}Success${CL_NORM}"
-  grep -A 14 'OCSP Response Data:' $tmp_file
+  grep -A 14 'OCSP Response Data:' "$tmp_file"
 }
 
 # Generate signing request
@@ -167,7 +169,7 @@ genCSR() {
 
   local host="$1"
 
-  openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout ${host}.key -out ${host}.csr
+  openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
 }
 
 # Generate HPKP for some request
@@ -179,10 +181,10 @@ genHPKPHeader() {
     usage && doExit 0
   fi
 
-  local main_file="$1"
-  local backup_file="$2"
+  local main_file backup_file main_pin backup_pin
 
-  local main_pin backup_pin
+  main_file="$1"
+  backup_file="$2"
 
   if [[ ! -r $main_file ]] ; then
     show "File $main_file is not readable" $RED
@@ -221,11 +223,13 @@ genHPKPHeader() {
 #
 # Code: Yes
 generateOCSPFile() {
-  local issuer_cert="$1"
-  local server_cert="$2"
-  local output="$3"
+  local issuer_cert server_cert output url
 
-  local url=$(openssl x509 -in "$server_cert" -text | grep "OCSP - URI:" | cut -d: -f2,3)
+  issuer_cert="$1"
+  server_cert="$2"
+  output="$3"
+
+  url=$(openssl x509 -in "$server_cert" -text | grep "OCSP - URI:" | cut -d: -f2,3)
 
   openssl ocsp -noverify -no_nonce -respout "$output" -issuer "$issuer_cert" -cert "$server_cert" -url "$url" &> /dev/null
 
@@ -283,19 +287,21 @@ isChain() {
 #
 # Echo: Path to temporary file with certificate (String)
 extractCertFromChain() {
-  local chain="$1"
-  local cert_num="$2"
+  local chain cert_num cert_start cert_end tmp_file
 
-  local cert_start=$(grep -n "BEGIN CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
-  local cert_end=$(grep -n "END CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
+  chain="$1"
+  cert_num="$2"
+
+  cert_start=$(grep -n "BEGIN CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
+  cert_end=$(grep -n "END CERTIFICATE" $chain | cut -f1 -d: | sed -n ${cert_num}p)
 
   if [[ -z "$cert_start" || -z "$cert_end" ]] ; then
     return
   fi
 
-  local tmp_file=$(mktemp -u $TMP_PATTERN)
+  tmp_file=$(mktemp -u $TMP_PATTERN)
 
-  cat "$chain" | sed -n ${cert_start},${cert_end}p > "$tmp_file"
+  cat "$chain" | sed -n "${cert_start},${cert_end}p" > "$tmp_file"
 
   echo "$tmp_file"
 }
