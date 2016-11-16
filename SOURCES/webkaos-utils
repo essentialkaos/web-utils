@@ -273,7 +273,7 @@ isChain() {
 
   [[ ! -f $file ]] && return 1
 
-  if [[ $(grep "BEGIN CERTIFICATE" "$file" | wc -l) -le 1 ]] ; then
+  if [[ $(grep -c "BEGIN CERTIFICATE" "$file") -le 1 ]] ; then
     return 1
   fi
 
