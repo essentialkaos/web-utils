@@ -13,7 +13,7 @@
 </details>
 
 <details>
-<summary><strong>From ESSENTIAL KAOS Public repo for RHEL6/CentOS6</strong></summary>
+<summary><strong>From ESSENTIAL KAOS Public repo for RHEL7/CentOS7</strong></summary>
 ```
 [sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-7.2-0.el7.noarch.rpm
 [sudo] yum install webkaos-utils
