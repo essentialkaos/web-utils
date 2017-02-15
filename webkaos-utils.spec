@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.3.0
+Version:         1.3.1
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Wed Feb 15 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.1-0
+- Improved version output
+
 * Thu Nov 17 2016 Anton Novojilov <andy@essentialkaos.com> - 1.3.0-0
 - Code refactoring
 
