@@ -1,22 +1,24 @@
-## WEBKAOS-Utils [![Code Climate](https://codeclimate.com/github/essentialkaos/webkaos-utils/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/webkaos-utils)
+## WEBKAOS-Utils [![Code Climate](https://codeclimate.com/github/essentialkaos/webkaos-utils/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/webkaos-utils) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
 
 `webkaos-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
 
 ### Installation
 
-##### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
-
+<details>
+<summary><strong>From ESSENTIAL KAOS Public repo for RHEL6/CentOS6</strong></summary>
 ```
 [sudo] yum install -y https://yum.kaos.io/6/release/i386/kaos-repo-7.2-0.el6.noarch.rpm
 [sudo] yum install webkaos-utils
 ```
+</details>
 
-##### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
-
+<details>
+<summary><strong>From ESSENTIAL KAOS Public repo for RHEL7/CentOS7</strong></summary>
 ```
 [sudo] yum install -y https://yum.kaos.io/7/release/x86_64/kaos-repo-7.2-0.el7.noarch.rpm
 [sudo] yum install webkaos-utils
 ```
+</details>
 
 ### Usage
 
