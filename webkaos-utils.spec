@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.3.2
+Version:         1.3.3
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,10 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Mon Apr 24 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.3-0
+- Arguments parser updated to v3 with fixed stderr output redirection for
+  showArgWarn and showArgValWarn functions
+
 * Thu Apr 06 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.2-0
 - Output errors to stderr
 - Minor improvements
