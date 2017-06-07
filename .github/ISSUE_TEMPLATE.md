@@ -7,7 +7,7 @@ _Before opening an issue, search for similar bug reports or feature requests on 
 * **Version used (`webkaos-utils -v`):** 
 * **OS (e.g. from `/etc/*-release`):** 
 * **Kernel (`uname -a`):** 
-* **Go version (`bash --version`):** 
+* **Bash version (`bash --version`):** 
 * **Install tools:** 
 
 **Steps to reproduce:**
