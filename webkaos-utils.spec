@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.3.3
+Version:         1.4.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Wed Oct 18 2017 Anton Novojilov <andy@essentialkaos.com> - 1.4.0-0
+- Added command 'csr-info' for viewing info from certificate signing request
+
 * Mon Apr 24 2017 Anton Novojilov <andy@essentialkaos.com> - 1.3.3-0
 - Arguments parser updated to v3 with fixed stderr output redirection for
   showArgWarn and showArgValWarn functions
