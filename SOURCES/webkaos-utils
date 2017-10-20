@@ -6,7 +6,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.3.3"
+VER="1.4.0"
 
 ########################################################################################
 
@@ -22,7 +22,9 @@ CYAN=36
 GREY=37
 DARK=90
 
-CL_NORM="\e[${NORM}m"
+CL_NORM="\e[0m"
+CL_BOLD="\e[0;${BOLD};49m"
+CL_UNLN="\e[0;${UNLN};49m"
 CL_RED="\e[0;${RED};49m"
 CL_GREEN="\e[0;${GREEN};49m"
 CL_YELLOW="\e[0;${YELLOW};49m"
@@ -38,7 +40,6 @@ CL_BL_BLUE="\e[1;${BLUE};49m"
 CL_BL_MAG="\e[1;${MAG};49m"
 CL_BL_CYAN="\e[1;${CYAN};49m"
 CL_BL_GREY="\e[1;${GREY};49m"
-CL_BL_DARK="\e[1;${DARK};49m"
 
 ########################################################################################
 
@@ -65,11 +66,11 @@ main() {
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_BL_DARK
   fi
 
-  if [[ $version || $ver ]] ; then
+  if [[ -n "$version" || -n "$ver" ]] ; then
     about && exit 0
   fi
 
-  if [[ $# -eq 0 || $help || $usage ]] ; then
+  if [[ $# -eq 0 || -n "$help" || -n "$usage" ]] ; then
     usage && exit 0
   fi
 
@@ -79,6 +80,7 @@ main() {
 
   case $cmd in
     "csr-gen")    genCSR "$@"        ;;
+    "csr-info")   csrInfo "$@"       ;;
     "hpkp-gen")   genHPKPHeader "$@" ;;
     "ocsp-gen")   genOCSP "$@"       ;;
     "ocsp-check") checkOCSP "$@"     ;;
@@ -103,7 +105,7 @@ genOCSP() {
     usage && doExit 0
   fi
 
-  if [[ ! -f $1 ]] ; then
+  if [[ ! -f "$1" ]] ; then
     error "File ${CL_BL_RED}${1}${CL_RED} does not exist" $RED
     return 1
   fi
@@ -118,12 +120,12 @@ genOCSP() {
     output=$(echo "$1" | sed 's/.crt/.ocsp/')
   fi
 
-  if [[ ! -f $server_cert ]] ; then
+  if [[ ! -f "$server_cert" ]] ; then
     error "Server certificate file ${CL_BL_RED}${server_cert}${CL_RED} is not exist" $RED
     doExit 1
   fi
 
-  if [[ ! -f $issuer_cert ]] ; then
+  if [[ ! -f "$issuer_cert" ]] ; then
     error "Issuer certificate file ${CL_BL_RED}${issuer_cert}${CL_RED} is not exist" $RED
     doExit 1
   fi
@@ -133,6 +135,50 @@ genOCSP() {
   if [[ $? -ne 0 ]] ; then
     doExit 1
   fi
+}
+
+# Print info about CSR file
+#
+# 1: CSR file (String)
+#
+# Code: No
+# Echo: No
+csrInfo() {
+  local csr="$1"
+
+  if [[ ! -e "$csr" ]] ; then
+    error "CSR file ${CL_BL_RED}${csr}${CL_RED} is not exist" $RED
+    doExit 1
+  fi
+
+  if [[ ! -r "$csr" ]] ; then
+    error "CSR file ${CL_BL_RED}${csr}${CL_RED} is not readable" $RED
+    doExit 1
+  fi
+
+  if ! grep -q "BEGIN CERTIFICATE REQUEST" "$csr" ; then
+    error "${CL_BL_RED}${csr}${CL_RED} is not a certificate signing request file" $RED
+    doExit 1
+  fi
+
+  local subject country state locality org unit cname email
+
+  subject=$(openssl req -noout -text -in "$csr" | grep 'Subject:' | sed 's/^ *Subject: //')
+  country=$(echo "$subject" | cut -f1 -d"," | cut -f2 -d"=")
+  state=$(echo "$subject" | cut -f2 -d"," | cut -f2 -d"=")
+  locality=$(echo "$subject" | cut -f3 -d"," | cut -f2 -d"=")
+  org=$(echo "$subject" | cut -f4 -d"," | cut -f2 -d"=")
+  unit=$(echo "$subject" | cut -f5 -d"," | cut -f2 -d"=")
+  cname=$(echo "$subject" | cut -f6 -d"," | cut -f2 -d"=" | cut -f1 -d"/")
+  email=$(echo "$subject" | cut -f6 -d"," | cut -f3 -d"=")
+
+  show "${CL_BOLD}Country Name:${CL_NORM}           ${country:---empty--}"
+  show "${CL_BOLD}State or Province Name:${CL_NORM} ${state:---empty--}"
+  show "${CL_BOLD}Locality Name:${CL_NORM}          ${locality:---empty--}"
+  show "${CL_BOLD}Organization:${CL_NORM}           ${org:---empty--}"
+  show "${CL_BOLD}Organizational Unit:${CL_NORM}    ${unit:---empty--}"
+  show "${CL_BOLD}Common Name:${CL_NORM}            ${cname:---empty--}"
+  show "${CL_BOLD}Email address:${CL_NORM}          ${email:---empty--}"
 }
 
 # Check OCSP stapling
@@ -154,7 +200,7 @@ checkOCSP() {
   status=$(openssl s_client -servername "$server_name" -connect "$host:443" -tls1 -tlsextdebug -status 2>&1 < /dev/null &> "$tmp_file")
 
   if [[ $(grep 'OCSP Response Status: successful' "$tmp_file") == "" ]] ; then
-    error "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
+    show "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
     doExit 1
   fi
 
@@ -192,7 +238,7 @@ genHPKPHeader() {
   main_file="$1"
   backup_file="$2"
 
-  if [[ ! -r $main_file ]] ; then
+  if [[ ! -r "$main_file" ]] ; then
     error "File ${CL_BL_RED}${main_file}${CL_RED} is not readable" $RED
     doExit 1
   fi
@@ -370,6 +416,7 @@ usage() {
 
   if [[ -n "$DARK" ]] ; then
     show "  ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate RSA key and a certificate signing request"
+    show "  ${CL_YELLOW}csr-info${CL_NORM} ${CL_GREY}csr${CL_NORM} ${CL_DARK}......................${CL_NORM} Print info from certificate signing request"
     show "${CL_DARK}┌ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
     show "${CL_DARK}│ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
     show "${CL_DARK}└ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
@@ -378,6 +425,7 @@ usage() {
     show "  ${CL_YELLOW}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...................${CL_NORM} Check OCSP response status for some host"
   else
     show "  csr-gen host                        Generate RSA key and a certificate signing request"
+    show "  csr-info csr                        Print info from certificate signing request"
     show "┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file"
     show "│ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file"
     show "└ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file"
