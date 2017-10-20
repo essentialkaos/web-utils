@@ -172,13 +172,13 @@ csrInfo() {
   cname=$(echo "$subject" | cut -f6 -d"," | cut -f2 -d"=" | cut -f1 -d"/")
   email=$(echo "$subject" | cut -f6 -d"," | cut -f3 -d"=")
 
-  show " ${CL_BOLD}Country Name:${CL_NORM}           ${country:---empty--}"
-  show " ${CL_BOLD}State or Province Name:${CL_NORM} ${state:---empty--}"
-  show " ${CL_BOLD}Locality Name:${CL_NORM}          ${locality:---empty--}"
-  show " ${CL_BOLD}Organization:${CL_NORM}           ${org:---empty--}"
-  show " ${CL_BOLD}Organizational Unit:${CL_NORM}    ${unit:---empty--}"
-  show " ${CL_BOLD}Common Name:${CL_NORM}            ${cname:---empty--}"
-  show " ${CL_BOLD}Email address:${CL_NORM}          ${email:---empty--}"
+  show "${CL_BOLD}Country Name:${CL_NORM}           ${country:---empty--}"
+  show "${CL_BOLD}State or Province Name:${CL_NORM} ${state:---empty--}"
+  show "${CL_BOLD}Locality Name:${CL_NORM}          ${locality:---empty--}"
+  show "${CL_BOLD}Organization:${CL_NORM}           ${org:---empty--}"
+  show "${CL_BOLD}Organizational Unit:${CL_NORM}    ${unit:---empty--}"
+  show "${CL_BOLD}Common Name:${CL_NORM}            ${cname:---empty--}"
+  show "${CL_BOLD}Email address:${CL_NORM}          ${email:---empty--}"
 }
 
 # Check OCSP stapling

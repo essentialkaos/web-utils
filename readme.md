@@ -26,11 +26,12 @@ Usage: webkaos-utils command args...
 Commands
 
   csr-gen host                        Generate RSA key and a certificate signing request
-  hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file
-  hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file
-  hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file
-  ocsp-gen server-cert issuer-cert    Generate OCSP stapling file from server certificate
-  ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain
+  csr-info csr                        Print info from certificate signing request
+┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file
+│ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file
+└ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file
+┌ ocsp-gen server-cert issuer-cert    Generate OCSP stapling file from server certificate
+└ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain
   ocsp-check host                     Check OCSP response status for some host
 
 Options
