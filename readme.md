@@ -1,4 +1,4 @@
-## WEBKAOS-Utils [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=master)](https://travis-ci.org/essentialkaos/webkaos-utils) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
+## `webkaos-utils` [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=master)](https://travis-ci.org/essentialkaos/webkaos-utils) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
 
 `webkaos-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
 
