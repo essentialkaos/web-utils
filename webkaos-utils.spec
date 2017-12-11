@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.4.0
+Version:         1.4.1
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -13,7 +13,7 @@ Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
 BuildArch:       noarch
 BuildRoot:       %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:        webkaos >= 1.9 openssl
+Requires:        openssl
 
 Provides:        %{name} = %{version}-%{release}
 
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Tue Dec 12 2017 Anton Novojilov <andy@essentialkaos.com> - 1.4.1-0
+- Code refactoring
+
 * Wed Oct 18 2017 Anton Novojilov <andy@essentialkaos.com> - 1.4.0-0
 - Added command 'csr-info' for viewing info from certificate signing request
 

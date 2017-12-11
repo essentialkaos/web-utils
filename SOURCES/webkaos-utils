@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1117,SC2034,SC2154
 
 ########################################################################################
 
@@ -6,7 +7,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.4.0"
+VER="1.4.2"
 
 ########################################################################################
 
@@ -74,6 +75,8 @@ main() {
     usage && exit 0
   fi
 
+  trap sigExitTrap SIGINT SIGQUIT SIGTERM
+
   local cmd="$1"
 
   shift 1
@@ -117,7 +120,7 @@ genOCSP() {
   else
     server_cert="$1"
     issuer_cert="$2"
-    output=$(echo "$1" | sed 's/.crt/.ocsp/')
+    output="${1/.crt/.ocsp}"
   fi
 
   if [[ ! -f "$server_cert" ]] ; then
@@ -130,9 +133,7 @@ genOCSP() {
     doExit 1
   fi
 
-  generateOCSPFile "$issuer_cert" "$server_cert" "$output"
-
-  if [[ $? -ne 0 ]] ; then
+  if ! generateOCSPFile "$issuer_cert" "$server_cert" "$output" ; then
     doExit 1
   fi
 }
@@ -286,6 +287,7 @@ generateOCSPFile() {
 
   openssl ocsp -noverify -no_nonce -respout "$output" -issuer "$issuer_cert" -cert "$server_cert" -url "$url" &> /dev/null
 
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]] ; then
     error "Error while OCSP stapling file generation" $RED
     return 1
@@ -356,9 +358,17 @@ extractCertFromChain() {
 
   tmp_file=$(mktemp -u $TMP_PATTERN)
 
-  cat "$chain" | sed -n "${cert_start},${cert_end}p" > "$tmp_file"
+  sed -n "${cert_start},${cert_end}p" < "$chain" > "$tmp_file"
 
   echo "$tmp_file"
+}
+
+# INT/TERM signal trap method
+#
+# Code: No
+# Echo: No
+sigExitTrap() {
+  doExit 1
 }
 
 # Remove temporary data and exit with given exit code
@@ -516,6 +526,7 @@ while [[ -n "$1" ]] ; do
     if [[ -z "$argn" ]] ; then
       argn=$arg
     else
+      # shellcheck disable=SC2015
       [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
       argn=$arg
     fi
@@ -545,7 +556,8 @@ while [[ -n "$1" ]] ; do
         shift && continue
       fi
 
-      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[@]:1:99}" || declare "$argm=${arg[@]:1:99}"
+      # shellcheck disable=SC2015
+      [[ -n "${!argm}" && $MERGEABLE_ARGS\  =~ $argm\  ]] && declare "$argm=${!argm} ${arg[*]:1:99}" || declare "$argm=${arg[*]:1:99}"
 
       unset argm && shift && continue
     else
@@ -554,6 +566,7 @@ while [[ -n "$1" ]] ; do
       if [[ -z "$argn" ]] ; then
         argn=$arg
       else
+        # shellcheck disable=SC2015
         [[ -z "$argk" ]] && ( declare -F showArgValWarn &>/dev/null && showArgValWarn "--$argn" ) || declare "$argn=true"
         argn=$arg
       fi
@@ -573,6 +586,7 @@ while [[ -n "$1" ]] ; do
     fi
   else
     if [[ -n "$argn" ]] ; then
+      # shellcheck disable=SC2015
       [[ -n "${!argn}" && $MERGEABLE_ARGS\  =~ $argn\  ]] && declare "$argn=${!argn} $1" || declare "$argn=$1"
 
       unset argn && shift && continue
@@ -587,6 +601,7 @@ done
 
 unset arg argn argm argk
 
+# shellcheck disable=SC2015,SC2086
 [[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
 
 ########################################################################################
