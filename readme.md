@@ -1,4 +1,4 @@
-## WEBKAOS-Utils [![Code Climate](https://codeclimate.com/github/essentialkaos/webkaos-utils/badges/gpa.svg)](https://codeclimate.com/github/essentialkaos/webkaos-utils) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
+## `webkaos-utils` [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=master)](https://travis-ci.org/essentialkaos/webkaos-utils) [![License](https://gh.kaos.io/ekol.svg)](https://essentialkaos.com/ekol)
 
 `webkaos-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
 
@@ -57,6 +57,13 @@ Examples
   Check OCSP response status for essentialkaos.com
 
 ```
+
+### Build Status
+
+| Branch | Status |
+|--------|--------|
+| `master` | [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=master)](https://travis-ci.org/essentialkaos/webkaos-utils) |
+| `develop` | [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=develop)](https://travis-ci.org/essentialkaos/webkaos-utils) |
 
 ### License
 
