@@ -2,13 +2,13 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.4.1
+Version:         1.4.2
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
 URL:             https://github.com/essentialkaos/webkaos-utils
 
-Source0:         https://source.kaos.io/%{name}/%{name}-%{version}.tar.bz2
+Source0:         https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 
 BuildArch:       noarch
 BuildRoot:       %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ###############################################################################
 
 %changelog
+* Wed Mar 14 2018 Anton Novojilov <andy@essentialkaos.com> - 1.4.2-0
+- Fixed bug with cleaning temporary data
+
 * Tue Dec 12 2017 Anton Novojilov <andy@essentialkaos.com> - 1.4.1-0
 - Code refactoring
 

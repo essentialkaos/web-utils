@@ -7,7 +7,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.4.1"
+VER="1.4.2"
 
 ########################################################################################
 
@@ -380,7 +380,7 @@ sigExitTrap() {
 doExit() {
   local ec="${1:-0}"
 
-  rm -f "${TMP_PATTERN//XXXXXXXXX/}*"
+  rm -f ${TMP_PATTERN//XXXXXXXXX/}*
 
   exit "$ec"
 }
