@@ -7,7 +7,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.4.2"
+VER="1.5.0"
 
 ########################################################################################
 
@@ -220,7 +220,7 @@ genCSR() {
     usage && doExit 0
   fi
 
-  local host="$1"
+  local host="${1//./_}"
 
   openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
 }
@@ -380,7 +380,7 @@ sigExitTrap() {
 doExit() {
   local ec="${1:-0}"
 
-  rm -f ${TMP_PATTERN//XXXXXXXXX/}*
+  rm -f ${TMP_PATTERN//X/}*
 
   exit "$ec"
 }
@@ -500,7 +500,7 @@ showArgWarn() {
   exit 1
 }
 
-## ARGUMENTS PARSING 3 #################################################################
+## ARGUMENTS PARSING 4 #################################################################
 
 [[ $# -eq 0 ]] && main && exit $?
 
@@ -602,6 +602,6 @@ done
 unset arg argn argm argk
 
 # shellcheck disable=SC2015,SC2086
-[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1:9999}
+[[ -n "$KEEP_ARGS" ]] && main $argv || main ${argt:1}
 
 ########################################################################################
