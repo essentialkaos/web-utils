@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.4.2
+Version:         1.5.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -13,7 +13,7 @@ Source0:         https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 BuildArch:       noarch
 BuildRoot:       %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:        openssl
+Requires:        bash openssl
 
 Provides:        %{name} = %{version}-%{release}
 
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Mon Aug 06 2018 Anton Novojilov <andy@essentialkaos.com> - 1.5.0-0
+- Added output name normalization for csr-gen command
+
 * Wed Mar 14 2018 Anton Novojilov <andy@essentialkaos.com> - 1.4.2-0
 - Fixed bug with cleaning temporary data
 
