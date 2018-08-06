@@ -380,7 +380,7 @@ sigExitTrap() {
 doExit() {
   local ec="${1:-0}"
 
-  rm -f ${TMP_PATTERN//XXXXXXXXX/}*
+  rm -f ${TMP_PATTERN//X/}*
 
   exit "$ec"
 }
