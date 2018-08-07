@@ -7,7 +7,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.5.0"
+VER="1.5.1"
 
 ########################################################################################
 
@@ -223,6 +223,10 @@ genCSR() {
   local host="${1//./_}"
 
   openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+
+  chmod 600 "${host}.key" "${host}.csr"
+
+  show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
 }
 
 # Generate HPKP for some request
@@ -292,6 +296,8 @@ generateOCSPFile() {
     error "Error while OCSP stapling file generation" $RED
     return 1
   fi
+
+  chmod 600 "$output"
 
   show "OCSP stapling file saved as $output" $GREEN
 
