@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.5.0
+Version:         1.5.1
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Tue Aug 07 2018 Anton Novojilov <andy@essentialkaos.com> - 1.5.1-0
+- Generating files with more strict permissions
+
 * Mon Aug 06 2018 Anton Novojilov <andy@essentialkaos.com> - 1.5.0-0
 - Added output name normalization for csr-gen command
 

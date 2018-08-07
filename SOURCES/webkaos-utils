@@ -7,7 +7,7 @@
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.5.0"
+VER="1.5.1"
 
 ########################################################################################
 
@@ -173,6 +173,7 @@ csrInfo() {
   cname=$(echo "$subject" | cut -f6 -d"," | cut -f2 -d"=" | cut -f1 -d"/")
   email=$(echo "$subject" | cut -f6 -d"," | cut -f3 -d"=")
 
+  show ""
   show "${CL_BOLD}Country Name:${CL_NORM}           ${country:---empty--}"
   show "${CL_BOLD}State or Province Name:${CL_NORM} ${state:---empty--}"
   show "${CL_BOLD}Locality Name:${CL_NORM}          ${locality:---empty--}"
@@ -180,6 +181,7 @@ csrInfo() {
   show "${CL_BOLD}Organizational Unit:${CL_NORM}    ${unit:---empty--}"
   show "${CL_BOLD}Common Name:${CL_NORM}            ${cname:---empty--}"
   show "${CL_BOLD}Email address:${CL_NORM}          ${email:---empty--}"
+  show ""
 }
 
 # Check OCSP stapling
@@ -223,6 +225,10 @@ genCSR() {
   local host="${1//./_}"
 
   openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+
+  chmod 600 "${host}.key" "${host}.csr"
+
+  show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
 }
 
 # Generate HPKP for some request
@@ -292,6 +298,8 @@ generateOCSPFile() {
     error "Error while OCSP stapling file generation" $RED
     return 1
   fi
+
+  chmod 600 "$output"
 
   show "OCSP stapling file saved as $output" $GREEN
 
