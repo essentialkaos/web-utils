@@ -1,4 +1,4 @@
-## `webkaos-utils` [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=master)](https://travis-ci.org/essentialkaos/webkaos-utils) [![License](https://gh.kaos.st/ekol.svg)](https://essentialkaos.com/ekol)
+## `webkaos-utils` [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg)](https://travis-ci.org/essentialkaos/webkaos-utils) [![License](https://gh.kaos.st/ekol.svg)](https://essentialkaos.com/ekol)
 
 `webkaos-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
 
@@ -16,6 +16,20 @@
 ```
 [sudo] yum install -y https://yum.kaos.st/7/release/x86_64/kaos-repo-9.1-0.el7.noarch.rpm
 [sudo] yum install webkaos-utils
+```
+
+#### From GitHub repository
+
+```bash
+wget https://kaos.sh/webkaos-utils/SOURCES/webkaos-utils
+chmod +x webkaos-utils
+[sudo] mv webkaos-utils /usr/bin/
+```
+
+Also, you can use the latest version of utility without installation:
+
+```bash
+bash <(curl -fsSL https://kaos.sh/webkaos-utils/SOURCES/webkaos-utils) # pass options here
 ```
 
 ### Usage
