@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.5.2
+Version:         1.5.3
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Wed Dec 04 2019 Anton Novojilov <andy@essentialkaos.com> - 1.5.3-0
+- Removed handler for script errors
+
 * Sat Nov 30 2019 Anton Novojilov <andy@essentialkaos.com> - 1.5.2-0
 - Added handling of SCRIPT_DEBUG environment variable for enabling debug mode
 - Added handler for script errors
