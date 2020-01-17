@@ -13,7 +13,7 @@ fi
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.5.3"
+VER="1.6.0"
 
 ########################################################################################
 
@@ -55,8 +55,8 @@ TMP_PATTERN="/tmp/_wu.XXXXXXXXX"
 
 ########################################################################################
 
-SUPPORTED_ARGS="!help !usage !version !ver !no_colors"
-SHORT_ARGS="h:!help v:!version nc:!no_colors"
+SUPPORTED_ARGS="!ecc !help !usage !version !ver !no_colors"
+SHORT_ARGS="E:!ecc h:!help v:!version nc:!no_colors"
 
 ########################################################################################
 
@@ -230,10 +230,16 @@ genCSR() {
 
   local host="${1//./_}"
 
-  openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+  if [[ -z "$ecc" ]] ; then
+    openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+  else
+    openssl ecparam -name prime256v1 -genkey -out "${host}.key"
+    openssl req -new -key "${host}.key" -out "${host}.csr"
+  fi
 
   chmod 600 "${host}.key" "${host}.csr"
 
+  show ""
   show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
 }
 
@@ -463,9 +469,11 @@ usage() {
   show ""
   
   if [[ -n "$DARK" ]] ; then
+    show "  ${CL_GREEN}--ecc, -E${CL_NORM} ${CL_DARK}......${CL_NORM} Generate ECC certificate signing request"
     show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}.....${CL_NORM} Show this help message"
     show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}..${CL_NORM} Show information about version"
   else
+    show "  --ecc, -E        Generate ECC certificate signing request"
     show "  --help, -h       Show this help message"
     show "  --version, -v    Show information about version"
   fi

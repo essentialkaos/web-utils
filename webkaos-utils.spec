@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.5.3
+Version:         1.6.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Sat Jan 18 2020 Anton Novojilov <andy@essentialkaos.com> - 1.6.0-0
+- Added option for generating ECC certificate signing request
+
 * Wed Dec 04 2019 Anton Novojilov <andy@essentialkaos.com> - 1.5.3-0
 - Removed handler for script errors
 
