@@ -50,6 +50,7 @@ Commands
 
 Options
 
+  --ecc, -E        Generate ECC certificate signing request
   --help, -h       Show this help message
   --version, -v    Show information about version
 
