@@ -13,7 +13,7 @@ fi
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.6.0"
+VER="1.7.0"
 
 ########################################################################################
 
@@ -93,6 +93,7 @@ main() {
     "hpkp-gen")   genHPKPHeader "$@" ;;
     "ocsp-gen")   genOCSP "$@"       ;;
     "ocsp-check") checkOCSP "$@"     ;;
+    "0rtt-check") checkRTT "$@"      ;;
     *) error "Unknown command ${CL_BL_RED}${cmd}" $RED
        doExit 1 ;;
   esac
@@ -192,7 +193,8 @@ csrInfo() {
 
 # Check OCSP stapling
 #
-# 1: Host and port (String)
+# 1: Host (String)
+# 2: Server name (String) [Optional]
 #
 # Code: No
 # Echo: No
@@ -215,6 +217,45 @@ checkOCSP() {
 
   show "OCSP Response Status: ${CL_GREEN}Success${CL_NORM}"
   grep -A 14 'OCSP Response Data:' "$tmp_file"
+}
+
+# Checks 0-RTT support
+#
+# 1: Host (String)
+# 2: Server name (String) [Optional]
+#
+# Code: No
+# Echo: No
+checkRTT() {
+  if [[ $# -eq 0 ]] ; then
+    usage && exit 0
+  fi
+
+  if ! isProtocolSupported "TLSv1.3" ; then
+    error "Installed OpenSSL version doesn't support TLS 1.3"
+    exit 1
+  fi
+
+  local host req_temp status
+
+  host="$1"
+  server_name="${2:-$host}"
+  req_temp=$(mktemp -u "$TMP_PATTERN")
+  ses_temp=$(mktemp -u "$TMP_PATTERN")
+
+  echo -e "GET / HTTP/1.1\r\nHost: ${server_name}\r\nConnection: close\r\n\r\n" > "$req_temp"
+
+  openssl s_client -servername "$server_name" -connect "${host}:443" -tls1_3 -sess_out "$ses_temp" -ign_eof < "$req_temp" &> /dev/null
+
+  sleep 0.1
+
+  status=$(openssl s_client -servername "$server_name" -connect "${host}:443" -tls1_3 -sess_in "$ses_temp" -early_data "$req_temp" <<< "Q" 2>&1 | grep 'Early data was ')
+
+  if [[ "$status" == "Early data was accepted" ]] ; then
+    show "0-RTT Status: ${CL_GREEN}$status${CL_NORM}"
+  else
+    show "0-RTT Status: ${CL_RED}${status:-Not supported}${CL_NORM}"
+  fi
 }
 
 # Generate signing request
@@ -391,6 +432,17 @@ sigExitTrap() {
   doExit 1
 }
 
+# Checks if installed OpenSSL version supported given protocol
+#
+# 1: Protocol (String)
+#
+# Code: Yes
+# Echo: No
+isProtocolSupported() {
+  openssl ciphers -v | tr -s " " | cut -f2 -d" " | grep -q "$1"
+  return $?
+}
+
 # Remove temporary data and exit with given exit code
 #
 # 1: Exit code (Number) [Optional]
@@ -439,7 +491,7 @@ error() {
 # Echo: No
 usage() {
   show ""
-  show "${CL_BOLD}Usage:${CL_NORM} webkaos-utils ${CL_YELLOW}command${CL_NORM} args..."
+  show "${CL_BOLD}Usage:${CL_NORM} webkaos-utils ${CL_YELLOW}command${CL_NORM} args…"
   show ""
   show "Commands" $BOLD
   show ""
@@ -452,7 +504,8 @@ usage() {
     show "${CL_DARK}└ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
     show "${CL_DARK}┌ ${CL_YELLOW}ocsp-gen${CL_NORM} ${CL_GREY}server-cert${CL_NORM} ${CL_GREY}issuer-cert${CL_NORM} ${CL_DARK}..${CL_NORM} Generate OCSP stapling file from server certificate"
     show "${CL_DARK}└ ${CL_YELLOW}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
-    show "  ${CL_YELLOW}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...................${CL_NORM} Check OCSP response status for some host"
+    show "  ${CL_YELLOW}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check OCSP response status for some host"
+    show "  ${CL_YELLOW}0rtt-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check 0-RTT support"
   else
     show "  csr-gen host                        Generate RSA key and a certificate signing request"
     show "  csr-info csr                        Print info from certificate signing request"
@@ -461,7 +514,8 @@ usage() {
     show "└ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file"
     show "┌ ocsp-gen server-cert issuer-cert    Generate OCSP stapling file from server certificate"
     show "└ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain"
-    show "  ocsp-check host                     Check OCSP response status for some host"
+    show "  ocsp-check host server-name         Check OCSP response status for some host"
+    show "  0rtt-check host server-name         Check 0-RTT support"
   fi
 
   show ""
