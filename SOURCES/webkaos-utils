@@ -439,7 +439,8 @@ sigExitTrap() {
 # Code: Yes
 # Echo: No
 isProtocolSupported() {
-  openssl ciphers -v | tr -s " " | cut -f2 -d" " | grep "$1"
+  openssl ciphers -v | tr -s " " | cut -f2 -d" " | grep -q "$1"
+  return $?
 }
 
 # Remove temporary data and exit with given exit code
