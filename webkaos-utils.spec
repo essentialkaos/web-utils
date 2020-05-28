@@ -2,11 +2,11 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.6.0
+Version:         1.7.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
-URL:             https://github.com/essentialkaos/webkaos-utils
+URL:             https://kaos.sh/webkaos-utils
 
 Source0:         https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 
@@ -47,6 +47,10 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Thu May 28 2020 Anton Novojilov <andy@essentialkaos.com> - 1.7.0-0
+- Added command '0rtt-check' for checking 0-RTT support
+- Fixed usage info
+
 * Sat Jan 18 2020 Anton Novojilov <andy@essentialkaos.com> - 1.6.0-0
 - Added option for generating ECC certificate signing request
 

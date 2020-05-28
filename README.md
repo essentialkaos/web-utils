@@ -4,13 +4,6 @@
 
 ### Installation
 
-#### From ESSENTIAL KAOS Public repo for RHEL6/CentOS6
-
-```
-[sudo] yum install -y yum install -y https://yum.kaos.st/kaos-repo-latest.el6.noarch.rpm
-[sudo] yum install webkaos-utils
-```
-
 #### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
 
 ```
@@ -35,7 +28,7 @@ bash <(curl -fsSL https://kaos.sh/webkaos-utils/SOURCES/webkaos-utils) # pass op
 ### Usage
 
 ```
-Usage: webkaos-utils command args...
+Usage: webkaos-utils command args…
 
 Commands
 
@@ -46,7 +39,8 @@ Commands
 └ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file
 ┌ ocsp-gen server-cert issuer-cert    Generate OCSP stapling file from server certificate
 └ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain
-  ocsp-check host                     Check OCSP response status for some host
+  ocsp-check host server-name         Check OCSP response status for some host
+  0rtt-check host server-name         Check 0-RTT support
 
 Options
 
