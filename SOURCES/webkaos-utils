@@ -94,7 +94,7 @@ main() {
     "ocsp-gen")   genOCSP "$@"       ;;
     "ocsp-check") checkOCSP "$@"     ;;
     "0rtt-check") checkRTT "$@"      ;;
-    *) error "Unknown command ${CL_BL_RED}${cmd}" $RED
+    *) error "Unknown command ${CL_BL_RED}${cmd}${$CL_RED}"
        doExit 1 ;;
   esac
 
