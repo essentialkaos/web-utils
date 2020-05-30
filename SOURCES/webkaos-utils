@@ -717,7 +717,7 @@ usage() {
     show "${CL_DARK}└ ${CL_YELLOW}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
     show "  ${CL_YELLOW}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check OCSP response status for some host"
     show "  ${CL_YELLOW}0rtt-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check 0-RTT support"
-    show "  ${CL_YELLOW}htpasswd${CL_NORM} ${CL_GREY}user password${CL_NORM} ${CL_DARK}............${CL_NORM} Generate record with MD5 password hash for .htpasswd"
+    show "  ${CL_YELLOW}htpasswd${CL_NORM} ${CL_GREY}user password${CL_NORM} ${CL_DARK}............${CL_NORM} Generate record with MD5 password hash for .htpasswd files"
   else
     show "┌ csr-gen domain                      Generate key and a certificate signing request"
     show "└ csr-gen config                      Generate key and a certificate signing request from OpenSSL configuration file"
@@ -730,7 +730,7 @@ usage() {
     show "└ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain"
     show "  ocsp-check host server-name         Check OCSP response status for some host"
     show "  0rtt-check host server-name         Check 0-RTT support"
-    show "  htpasswd user password              Generate record with MD5 password hash for .htpasswd"
+    show "  htpasswd user password              Generate record with MD5 password hash for .htpasswd files"
   fi
 
   show ""

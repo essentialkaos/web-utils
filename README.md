@@ -52,7 +52,7 @@ Commands
 └ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain
   ocsp-check host server-name         Check OCSP response status for some host
   0rtt-check host server-name         Check 0-RTT support
-  htpasswd user password              Generate record with MD5 password hash for .htpasswd
+  htpasswd user password              Generate record with MD5 password hash for .htpasswd files
 
 Options
 
