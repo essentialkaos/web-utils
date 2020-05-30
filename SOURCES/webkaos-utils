@@ -150,25 +150,45 @@ showCSR() {
     doExit 1
   fi
 
-  local subject country state locality org unit cname email
+  local tmp_file subject country state state company section domain email
+  local algorithm key_size key_info
 
-  subject=$(openssl req -noout -text -in "$csr" | grep 'Subject:' | sed 's/^ *Subject: //')
+  tmp_file=$(mktemp -u "$TMP_PATTERN")
+
+  openssl req -noout -text -in "$csr" > "$tmp_file"
+
+  # shellcheck disable=SC2181
+  if [[ $? -ne 0 ]] ; then
+    error "Error while reading CSR file"
+    doExit 1
+  fi
+
+  subject=$(grep 'Subject:' "$tmp_file" | sed 's/^ *Subject: //')
   country=$(echo "$subject" | cut -f1 -d"," | cut -f2 -d"=")
   state=$(echo "$subject" | cut -f2 -d"," | cut -f2 -d"=")
-  locality=$(echo "$subject" | cut -f3 -d"," | cut -f2 -d"=")
-  org=$(echo "$subject" | cut -f4 -d"," | cut -f2 -d"=")
-  unit=$(echo "$subject" | cut -f5 -d"," | cut -f2 -d"=")
-  cname=$(echo "$subject" | cut -f6 -d"," | cut -f2 -d"=" | cut -f1 -d"/")
+  state=$(echo "$subject" | cut -f3 -d"," | cut -f2 -d"=")
+  company=$(echo "$subject" | cut -f4 -d"," | cut -f2 -d"=")
+  section=$(echo "$subject" | cut -f5 -d"," | cut -f2 -d"=")
+  domain=$(echo "$subject" | cut -f6 -d"," | cut -f2 -d"=" | cut -f1 -d"/")
   email=$(echo "$subject" | cut -f6 -d"," | cut -f3 -d"=")
+  algorithm=$(grep "Public Key Algorithm:" "$tmp_file" | cut -f2 -d":" | tr -d ' ')
+  key_size=$(grep "Public-Key:" "$tmp_file" | cut -f2 -d":")
+
+  if [[ "$algorithm" == "id-ecPublicKey" ]] ; then
+    key_info="ECC${key_size}"
+  else
+    key_info="RSA${key_size}"
+  fi
 
   show ""
-  show "${CL_BOLD}Country Name:${CL_NORM}           ${country:---empty--}"
-  show "${CL_BOLD}State or Province Name:${CL_NORM} ${state:---empty--}"
-  show "${CL_BOLD}Locality Name:${CL_NORM}          ${locality:---empty--}"
-  show "${CL_BOLD}Organization:${CL_NORM}           ${org:---empty--}"
-  show "${CL_BOLD}Organizational Unit:${CL_NORM}    ${unit:---empty--}"
-  show "${CL_BOLD}Common Name:${CL_NORM}            ${cname:---empty--}"
-  show "${CL_BOLD}Email address:${CL_NORM}          ${email:---empty--}"
+  show "${CL_BOLD}Key:${CL_NORM}                   ${key_info:---empty--}"
+  show "${CL_BOLD}Common name (domain):${CL_NORM}  ${domain:---empty--}"
+  show "${CL_BOLD}Email address:${CL_NORM}         ${email:---empty--}"
+  show "${CL_BOLD}Country code:${CL_NORM}          ${country:---empty--}"
+  show "${CL_BOLD}State or province:${CL_NORM}     ${state:---empty--}"
+  show "${CL_BOLD}Locality:${CL_NORM}              ${state:---empty--}"
+  show "${CL_BOLD}Organization:${CL_NORM}          ${company:---empty--}"
+  show "${CL_BOLD}Organizational unit:${CL_NORM}   ${section:---empty--}"
   show ""
 }
 
@@ -192,13 +212,13 @@ genCSRConfig() {
 
   show ""
 
-  read -e -p "Common Name (Domain): " domain
-  read -e -p "Email Address: " email
-  read -e -p "Country Code (XX): " country
-  read -e -p "State or Province: " state
-  read -e -p "Locality (City): " city
-  read -e -p "Organization (Company): " company
-  read -e -p "Organizational Unit (Section): " section
+  read -r -e -p "Common Name (Domain): " domain
+  read -r -e -p "Email Address: " email
+  read -r -e -p "Country Code (XX): " country
+  read -r -e -p "State or Province: " state
+  read -r -e -p "Locality (City): " city
+  read -r -e -p "Organization (Company): " company
+  read -r -e -p "Organizational Unit (Section): " section
 
   sed -i "s/%DOMAIN%/$domain/" "$tmp_file"
   sed -i "s/%EMAIL%/$email/" "$tmp_file"
