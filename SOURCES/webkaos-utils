@@ -117,8 +117,6 @@ genCSR() {
   else
     generateCRSInteractive "$@"
   fi
-
-  return $?
 }
 
 
@@ -132,17 +130,17 @@ csrInfo() {
   local csr="$1"
 
   if [[ ! -e "$csr" ]] ; then
-    error "CSR file ${CL_BL_RED}${csr}${CL_RED} is not exist" $RED
+    error "CSR file ${CL_BL_RED}${csr}${CL_RED} is not exist"
     doExit 1
   fi
 
   if [[ ! -r "$csr" ]] ; then
-    error "CSR file ${CL_BL_RED}${csr}${CL_RED} is not readable" $RED
+    error "CSR file ${CL_BL_RED}${csr}${CL_RED} is not readable"
     doExit 1
   fi
 
   if ! grep -q "BEGIN CERTIFICATE REQUEST" "$csr" ; then
-    error "${CL_BL_RED}${csr}${CL_RED} is not a certificate signing request file" $RED
+    error "${CL_BL_RED}${csr}${CL_RED} is not a certificate signing request file"
     doExit 1
   fi
 
@@ -183,8 +181,8 @@ genOCSP() {
   fi
 
   if [[ ! -f "$1" ]] ; then
-    error "File ${CL_BL_RED}${1}${CL_RED} does not exist" $RED
-    return 1
+    error "File ${CL_BL_RED}${1}${CL_RED} does not exist"
+    doExit 1
   fi
 
   if isChain "$1" ; then
@@ -198,12 +196,12 @@ genOCSP() {
   fi
 
   if [[ ! -f "$server_cert" ]] ; then
-    error "Server certificate file ${CL_BL_RED}${server_cert}${CL_RED} is not exist" $RED
+    error "Server certificate file ${CL_BL_RED}${server_cert}${CL_RED} is not exist"
     doExit 1
   fi
 
   if [[ ! -f "$issuer_cert" ]] ; then
-    error "Issuer certificate file ${CL_BL_RED}${issuer_cert}${CL_RED} is not exist" $RED
+    error "Issuer certificate file ${CL_BL_RED}${issuer_cert}${CL_RED} is not exist"
     doExit 1
   fi
 
@@ -294,7 +292,7 @@ genHPKPHeader() {
   backup_file="$2"
 
   if [[ ! -r "$main_file" ]] ; then
-    error "File ${CL_BL_RED}${main_file}${CL_RED} is not readable" $RED
+    error "File ${CL_BL_RED}${main_file}${CL_RED} is not readable"
     doExit 1
   fi
 
@@ -305,7 +303,7 @@ genHPKPHeader() {
   fi
 
   if [[ -z "$main_pin" ]] ; then
-    error "Can't generate HPKP for given request" $RED
+    error "Can't generate HPKP for given request"
     doExit 1
   fi
 
@@ -343,15 +341,13 @@ generateOCSPFile() {
 
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]] ; then
-    error "Error while OCSP stapling file generation" $RED
-    return 1
+    error "Error while OCSP stapling file generation"
+    doExit 1
   fi
 
   chmod 600 "$output"
 
   show "OCSP stapling file saved as $output" $GREEN
-
-  return 0
 }
 
 # Generate CSR based on info from given OpenSSL configuration file
@@ -364,7 +360,7 @@ generateCRSFromConfig() {
   local config="$1"
   local host
 
-  host=$(grep 'DOMAIN = ' $config | cut -f2 -d"=" | tr -d ' "')
+  host=$(grep 'DOMAIN = ' "$config" | cut -f2 -d"=" | tr -d ' "')
 
   if [[ -z "$host" ]] ; then
     error "Can't read domain from configuration file"
@@ -378,11 +374,15 @@ generateCRSFromConfig() {
     openssl req -new -config "$config" -key "${host}.key" -out "${host}.csr" &> /dev/null
   fi
 
+   # shellcheck disable=SC2181
+  if [[ $? -ne 0 ]] ; then
+    error "Error while CSR file generation"
+    doExit 1
+  fi
+
   chmod 600 "${host}.key" "${host}.csr"
 
   show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
-
-  return 0
 }
 
 # Generate CSR in interactive mode
@@ -404,12 +404,16 @@ generateCRSInteractive() {
     openssl req -new -key "${host}.key" -out "${host}.csr"
   fi
 
+  # shellcheck disable=SC2181
+  if [[ $? -ne 0 ]] ; then
+    error "Error while CSR file generation"
+    doExit 1
+  fi
+
   chmod 600 "${host}.key" "${host}.csr"
 
   show ""
   show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
-
-  return 0
 }
 
 # Generate HPKP hash from given file
@@ -545,7 +549,7 @@ show() {
 # Code: No
 # Echo: No
 error() {
-  show "$@" 1>&2
+  show "$@" $RED 1>&2
 }
 
 # Print usage info
@@ -637,7 +641,7 @@ about() {
 # Code: No
 # Echo: No
 showArgWarn() {
-  error "Unknown argument $1" $RED
+  error "Unknown argument $1"
   exit 1
 }
 
