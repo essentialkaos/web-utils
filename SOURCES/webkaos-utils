@@ -212,13 +212,13 @@ genCSRConfig() {
 
   show ""
 
-  read -r -e -p "Common Name (Domain): " domain
+  read -r -e -p "Common Name (domain): " domain
   read -r -e -p "Email Address: " email
   read -r -e -p "Country Code (XX): " country
   read -r -e -p "State or Province: " state
-  read -r -e -p "Locality (City): " city
-  read -r -e -p "Organization (Company): " company
-  read -r -e -p "Organizational Unit (Section): " section
+  read -r -e -p "Locality (city): " city
+  read -r -e -p "Organization (company): " company
+  read -r -e -p "Organizational Unit (section): " section
 
   sed -i "s/%DOMAIN%/$domain/" "$tmp_file"
   sed -i "s/%EMAIL%/$email/" "$tmp_file"
