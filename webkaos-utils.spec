@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.7.0
+Version:         1.8.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,15 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Sat May 30 2020 Anton Novojilov <andy@essentialkaos.com> - 1.8.0-0
+- Added possibility to generate CSR files based on information from OpenSSL
+  configuration file
+- Added command 'csr-config-gen' for generating OpenSSL configuration files
+  for CSR generation
+- Added command 'htpasswd' for generating records for .htpasswd files
+- Show key info in 'csr-info' output
+- Code refactoring
+
 * Thu May 28 2020 Anton Novojilov <andy@essentialkaos.com> - 1.7.0-0
 - Added command '0rtt-check' for checking 0-RTT support
 - Fixed usage info
