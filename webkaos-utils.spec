@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with webkaos server
 Name:            webkaos-utils
-Version:         1.8.0
+Version:         1.8.1
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
@@ -47,6 +47,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Sun May 31 2020 Anton Novojilov <andy@essentialkaos.com> - 1.8.1-0
+- Default RSA key length changed to 2048
+
 * Sat May 30 2020 Anton Novojilov <andy@essentialkaos.com> - 1.8.0-0
 - Added possibility to generate CSR files based on information from OpenSSL
   configuration file

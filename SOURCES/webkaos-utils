@@ -13,7 +13,7 @@ fi
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.8.0"
+VER="1.8.1"
 
 ########################################################################################
 
@@ -52,6 +52,9 @@ CL_BL_GREY="\e[1;${GREY};49m"
 
 # Pattern used for generating temporary files and directories
 TMP_PATTERN="/tmp/_wu.XXXXXXXXX"
+
+# Default RSA key length
+RSA_SIZE=2048
 
 ########################################################################################
 
@@ -458,7 +461,7 @@ generateCRSFromConfig() {
   host=$(formatHostName "$host")
 
   if [[ -z "$ecc" ]] ; then
-    openssl req -new -config "$config" -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr" &> /dev/null
+    openssl req -new -config "$config" -newkey rsa:$RSA_SIZE -nodes -sha256 -keyout "${host}.key" -out "${host}.csr" &> /dev/null
   else
     openssl ecparam -name prime256v1 -genkey -out "${host}.key" &> /dev/null
     openssl req -new -config "$config" -key "${host}.key" -out "${host}.csr" &> /dev/null
@@ -488,7 +491,7 @@ generateCRSInteractive() {
   host=$(formatHostName "$1")
 
   if [[ -z "$ecc" ]] ; then
-    openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+    openssl req -new -newkey rsa:$RSA_SIZE -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
   else
     openssl ecparam -name prime256v1 -genkey -out "${host}.key"
     openssl req -new -key "${host}.key" -out "${host}.csr"
