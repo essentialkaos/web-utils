@@ -455,6 +455,8 @@ generateCRSFromConfig() {
     doExit 1
   fi
 
+  host=$(formatHostName "$host")
+
   if [[ -z "$ecc" ]] ; then
     openssl req -new -config "$config" -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr" &> /dev/null
   else
@@ -483,7 +485,7 @@ generateCRSInteractive() {
   local domain="$1"
   local host
 
-  host=$(formatDomain "$1")
+  host=$(formatHostName "$1")
 
   if [[ -z "$ecc" ]] ; then
     openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
@@ -623,13 +625,13 @@ emailAddress = \$EMAIL
 EOF
 }
 
-# Formats domain name
+# Formats host name
 #
 # 1: Domain (String)
 #
 # Code: No
 # Echo: Formatted name (String)
-formatDomain() {
+formatHostName() {
   echo "$1" | sed 's/\*\./wildcard-/g' | sed 's/\./_/g'
 }
 
@@ -706,7 +708,7 @@ usage() {
   show ""
 
   if [[ -n "$DARK" ]] ; then
-    show "${CL_DARK}┌ ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}domain${CL_NORM} ${CL_DARK}....................${CL_NORM} Generate key and a certificate signing request"
+    show "${CL_DARK}┌ ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate key and a certificate signing request"
     show "${CL_DARK}└ ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}config${CL_NORM} ${CL_DARK}....................${CL_NORM} Generate key and a certificate signing request from OpenSSL configuration file"
     show "  ${CL_YELLOW}csr-info${CL_NORM} ${CL_GREY}csr${CL_NORM} ${CL_DARK}......................${CL_NORM} Print info from certificate signing request"
     show "  ${CL_YELLOW}csr-config-gen${CL_NORM} ${CL_GREY}output${CL_NORM} ${CL_DARK}.............${CL_NORM} Generate OpenSSL configuration file for certificate signing request generation"
@@ -719,7 +721,7 @@ usage() {
     show "  ${CL_YELLOW}0rtt-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check 0-RTT support"
     show "  ${CL_YELLOW}htpasswd${CL_NORM} ${CL_GREY}user password${CL_NORM} ${CL_DARK}............${CL_NORM} Generate record with MD5 password hash for .htpasswd files"
   else
-    show "┌ csr-gen domain                      Generate key and a certificate signing request"
+    show "┌ csr-gen host                        Generate key and a certificate signing request"
     show "└ csr-gen config                      Generate key and a certificate signing request from OpenSSL configuration file"
     show "  csr-info csr                        Print info from certificate signing request"
     show "  csr-config-gen output               Generate OpenSSL configuration file for certificate signing request generation"

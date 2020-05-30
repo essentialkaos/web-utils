@@ -41,7 +41,7 @@ Usage: webkaos-utils command args…
 
 Commands
 
-┌ csr-gen domain                      Generate key and a certificate signing request
+┌ csr-gen host                        Generate key and a certificate signing request
 └ csr-gen config                      Generate key and a certificate signing request from OpenSSL configuration file
   csr-info csr                        Print info from certificate signing request
   csr-config-gen output               Generate OpenSSL configuration file for certificate signing request generation
