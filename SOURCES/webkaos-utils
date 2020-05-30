@@ -13,7 +13,7 @@ fi
 APP="WEBKAOS Utils"
 
 # Utility version
-VER="1.7.0"
+VER="1.8.0"
 
 ########################################################################################
 
@@ -101,49 +101,26 @@ main() {
   doExit 0
 }
 
-# Generate OCSP
+# Generate signing request
 #
-# 1: Server cert or cert chain file (String)
-# 2: Issuer cert (String) [Optional]
+# 1: Domain (String)
 #
 # Code: No
 # Echo: No
-genOCSP() {
-  local issuer_cert server_cert output
-
+genCSR() {
   if [[ $# -eq 0 ]] ; then
     usage && doExit 0
   fi
 
-  if [[ ! -f "$1" ]] ; then
-    error "File ${CL_BL_RED}${1}${CL_RED} does not exist" $RED
-    return 1
-  fi
-
-  if isChain "$1" ; then
-    server_cert=$(extractCertFromChain "$1" 1)
-    issuer_cert=$(extractCertFromChain "$1" 2)
-    output=$(echo "$1" | sed 's/-chain//' | sed 's/.crt/.ocsp/')
+  if [[ -e "$1" && -r "$1" ]] ; then
+    generateCRSFromConfig "$@"
   else
-    server_cert="$1"
-    issuer_cert="$2"
-    output="${1/.crt/.ocsp}"
+    generateCRSInteractive "$@"
   fi
 
-  if [[ ! -f "$server_cert" ]] ; then
-    error "Server certificate file ${CL_BL_RED}${server_cert}${CL_RED} is not exist" $RED
-    doExit 1
-  fi
-
-  if [[ ! -f "$issuer_cert" ]] ; then
-    error "Issuer certificate file ${CL_BL_RED}${issuer_cert}${CL_RED} is not exist" $RED
-    doExit 1
-  fi
-
-  if ! generateOCSPFile "$issuer_cert" "$server_cert" "$output" ; then
-    doExit 1
-  fi
+  return $?
 }
+
 
 # Print info about CSR file
 #
@@ -189,6 +166,50 @@ csrInfo() {
   show "${CL_BOLD}Common Name:${CL_NORM}            ${cname:---empty--}"
   show "${CL_BOLD}Email address:${CL_NORM}          ${email:---empty--}"
   show ""
+}
+
+# Generate OCSP
+#
+# 1: Server cert or cert chain file (String)
+# 2: Issuer cert (String) [Optional]
+#
+# Code: No
+# Echo: No
+genOCSP() {
+  local issuer_cert server_cert output
+
+  if [[ $# -eq 0 ]] ; then
+    usage && doExit 0
+  fi
+
+  if [[ ! -f "$1" ]] ; then
+    error "File ${CL_BL_RED}${1}${CL_RED} does not exist" $RED
+    return 1
+  fi
+
+  if isChain "$1" ; then
+    server_cert=$(extractCertFromChain "$1" 1)
+    issuer_cert=$(extractCertFromChain "$1" 2)
+    output=$(echo "$1" | sed 's/-chain//' | sed 's/.crt/.ocsp/')
+  else
+    server_cert="$1"
+    issuer_cert="$2"
+    output="${1/.crt/.ocsp}"
+  fi
+
+  if [[ ! -f "$server_cert" ]] ; then
+    error "Server certificate file ${CL_BL_RED}${server_cert}${CL_RED} is not exist" $RED
+    doExit 1
+  fi
+
+  if [[ ! -f "$issuer_cert" ]] ; then
+    error "Issuer certificate file ${CL_BL_RED}${issuer_cert}${CL_RED} is not exist" $RED
+    doExit 1
+  fi
+
+  if ! generateOCSPFile "$issuer_cert" "$server_cert" "$output" ; then
+    doExit 1
+  fi
 }
 
 # Check OCSP stapling
@@ -256,32 +277,6 @@ checkRTT() {
   else
     show "0-RTT Status: ${CL_RED}${status:-Not supported}${CL_NORM}"
   fi
-}
-
-# Generate signing request
-#
-# 1: Hostname (String)
-#
-# Code: No
-# Echo: No
-genCSR() {
-  if [[ $# -eq 0 ]] ; then
-    usage && doExit 0
-  fi
-
-  local host="${1//./_}"
-
-  if [[ -z "$ecc" ]] ; then
-    openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
-  else
-    openssl ecparam -name prime256v1 -genkey -out "${host}.key"
-    openssl req -new -key "${host}.key" -out "${host}.csr"
-  fi
-
-  chmod 600 "${host}.key" "${host}.csr"
-
-  show ""
-  show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
 }
 
 # Generate HPKP for some request
@@ -359,6 +354,64 @@ generateOCSPFile() {
   return 0
 }
 
+# Generate CSR based on info from given OpenSSL configuration file
+#
+# 1: Path to config (String)
+#
+# Code: Yes
+# Echo: No
+generateCRSFromConfig() {
+  local config="$1"
+  local host
+
+  host=$(grep 'DOMAIN = ' $config | cut -f2 -d"=" | tr -d ' "')
+
+  if [[ -z "$host" ]] ; then
+    error "Can't read domain from configuration file"
+    doExit 1
+  fi
+
+  if [[ -z "$ecc" ]] ; then
+    openssl req -new -config "$config" -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr" &> /dev/null
+  else
+    openssl ecparam -name prime256v1 -genkey -out "${host}.key" &> /dev/null
+    openssl req -new -config "$config" -key "${host}.key" -out "${host}.csr" &> /dev/null
+  fi
+
+  chmod 600 "${host}.key" "${host}.csr"
+
+  show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
+
+  return 0
+}
+
+# Generate CSR in interactive mode
+#
+# 1: Domain (String)
+#
+# Code: Yes
+# Echo: No
+generateCRSInteractive() {
+  local domain="$1"
+  local host
+
+  host=$(formatDomain "$1")
+
+  if [[ -z "$ecc" ]] ; then
+    openssl req -new -newkey rsa:4096 -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+  else
+    openssl ecparam -name prime256v1 -genkey -out "${host}.key"
+    openssl req -new -key "${host}.key" -out "${host}.csr"
+  fi
+
+  chmod 600 "${host}.key" "${host}.csr"
+
+  show ""
+  show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
+
+  return 0
+}
+
 # Generate HPKP hash from given file
 #
 # 1: Key / CRT / CSR file
@@ -422,6 +475,16 @@ extractCertFromChain() {
   sed -n "${cert_start},${cert_end}p" < "$chain" > "$tmp_file"
 
   echo "$tmp_file"
+}
+
+# Formats domain name
+#
+# 1: Domain (String)
+#
+# Code: No
+# Echo: Formatted name (String)
+formatDomain() {
+  echo "$1" | sed 's/\*\./wildcard-/g' | sed 's/\./_/g'
 }
 
 # INT/TERM signal trap method
@@ -497,7 +560,8 @@ usage() {
   show ""
 
   if [[ -n "$DARK" ]] ; then
-    show "  ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate RSA key and a certificate signing request"
+    show "${CL_DARK}┌ ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}domain${CL_NORM} ${CL_DARK}....................${CL_NORM} Generate key and a certificate signing request"
+    show "${CL_DARK}└ ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}config${CL_NORM} ${CL_DARK}....................${CL_NORM} Generate key and a certificate signing request from OpenSSL config"
     show "  ${CL_YELLOW}csr-info${CL_NORM} ${CL_GREY}csr${CL_NORM} ${CL_DARK}......................${CL_NORM} Print info from certificate signing request"
     show "${CL_DARK}┌ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
     show "${CL_DARK}│ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
@@ -507,7 +571,8 @@ usage() {
     show "  ${CL_YELLOW}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check OCSP response status for some host"
     show "  ${CL_YELLOW}0rtt-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check 0-RTT support"
   else
-    show "  csr-gen host                        Generate RSA key and a certificate signing request"
+    show "┌ csr-gen domain                      Generate key and a certificate signing request"
+    show "└ csr-gen config                      Generate key and a certificate signing request from OpenSSL config"
     show "  csr-info csr                        Print info from certificate signing request"
     show "┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file"
     show "│ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file"

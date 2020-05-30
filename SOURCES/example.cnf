@@ -1,0 +1,40 @@
+# ############################################################################ #
+#                OpenSSL configuration file for CSR generation                 #
+# ############################################################################ #
+
+# Common Name (eg, your name or your server's hostname)
+DOMAIN = "domain.org"
+
+# Email Address
+EMAIL = "me@domain.org"
+
+# Country Name (2 letter code)
+COUNTRY = "UK"
+
+# State or Province Name (full name)
+STATE = "London"
+
+# Locality Name (eg, city)
+CITY = "London"
+
+# Organization Name (eg, company)
+COMPANY = "My Company"
+
+# Organizational Unit Name (eg, section)
+SECTION = "IT"
+
+# ##################### NO MODIFICATIONS REQUIRED BELOW ###################### #
+
+[ req ]
+prompt = no
+encrypt_key = no
+distinguished_name = dn
+
+[dn]
+C = $COUNTRY
+ST = $STATE
+L = $CITY
+O = $COMPANY
+OU = $SECTION
+CN = $DOMAIN
+emailAddress = $EMAIL
