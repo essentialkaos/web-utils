@@ -94,7 +94,8 @@ main() {
     "ocsp-gen")   genOCSP "$@"       ;;
     "ocsp-check") checkOCSP "$@"     ;;
     "0rtt-check") checkRTT "$@"      ;;
-    *) error "Unknown command ${CL_BL_RED}${cmd}${$CL_RED}"
+    "htpasswd")   genHTPasswd "$@"   ;;
+    *) error "Unknown command ${CL_BL_RED}${cmd}${CL_RED}"
        doExit 1 ;;
   esac
 
@@ -103,7 +104,7 @@ main() {
 
 # Generate signing request
 #
-# 1: Domain (String)
+# 1: Domain or config file (String)
 #
 # Code: No
 # Echo: No
@@ -275,6 +276,24 @@ checkRTT() {
   else
     show "0-RTT Status: ${CL_RED}${status:-Not supported}${CL_NORM}"
   fi
+}
+
+# Generate record with MD5 password hash for .htpasswd
+#
+# 1: User name (String)
+# 2: Password (String)
+#
+# Code: No
+# Echo: No
+genHTPasswd() {
+  if [[ $# -lt 2 ]] ; then
+    usage && exit 0
+  fi
+
+  local user="$1"
+  local password="$2"
+
+  echo "$user:$(openssl passwd -apr1 "$password")"
 }
 
 # Generate HPKP for some request
@@ -574,6 +593,7 @@ usage() {
     show "${CL_DARK}└ ${CL_YELLOW}ocsp-gen${CL_NORM} ${CL_GREY}cert-chain${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OCSP stapling file from server certificate chain"
     show "  ${CL_YELLOW}ocsp-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check OCSP response status for some host"
     show "  ${CL_YELLOW}0rtt-check${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}server-name${CL_NORM} ${CL_DARK}.......${CL_NORM} Check 0-RTT support"
+    show "  ${CL_YELLOW}htpasswd${CL_NORM} ${CL_GREY}user password${CL_NORM} ${CL_DARK}............${CL_NORM} Generate record with MD5 password hash for .htpasswd"
   else
     show "┌ csr-gen domain                      Generate key and a certificate signing request"
     show "└ csr-gen config                      Generate key and a certificate signing request from OpenSSL config"
@@ -585,6 +605,7 @@ usage() {
     show "└ ocsp-gen cert-chain                 Generate OCSP stapling file from server certificate chain"
     show "  ocsp-check host server-name         Check OCSP response status for some host"
     show "  0rtt-check host server-name         Check 0-RTT support"
+    show "  htpasswd user password              Generate record with MD5 password hash for .htpasswd"
   fi
 
   show ""
