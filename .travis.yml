@@ -22,5 +22,5 @@ before_install:
   - chmod +x perfecto-docker
 
 script:
- - bash -c 'shopt -s globstar; ./shellcheck-latest/shellcheck SOURCES/webkaos-utils'
- - ./perfecto-docker webkaos-utils.spec
+ - bash -c 'shopt -s globstar; ./shellcheck-latest/shellcheck SOURCES/web-utils'
+ - ./perfecto-docker web-utils.spec

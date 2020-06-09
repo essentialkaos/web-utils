@@ -1,7 +1,7 @@
-<p align="center"><a href="#readme"><img src="https://gh.kaos.st/webkaos-utils.svg"/></a></p>
+<p align="center"><a href="#readme"><img src="https://gh.kaos.st/web-utils.svg"/></a></p>
 
 <p align="center">
-  <a href="https://travis-ci.com/essentialkaos/webkaos-utils"><img src="https://travis-ci.com/essentialkaos/webkaos-utils.svg"></a>
+  <a href="https://travis-ci.com/essentialkaos/web-utils"><img src="https://travis-ci.com/essentialkaos/web-utils.svg"></a>
   <a href="https://essentialkaos.com/ekol"><img src="https://gh.kaos.st/ekol.svg"></a>
 </p>
 
@@ -9,35 +9,35 @@
 
 <br/>
 
-`webkaos-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
+`web-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
 
 ### Installation
 
-#### From ESSENTIAL KAOS Public repo for RHEL7/CentOS7
+#### From ESSENTIAL KAOS Public repository
 
 ```
-[sudo] yum install -y yum install -y https://yum.kaos.st/kaos-repo-latest.el7.noarch.rpm
-[sudo] yum install webkaos-utils
+sudo yum install -y yum install -y https://yum.kaos.st/get/$(uname -r).rpm
+sudo yum install web-utils
 ```
 
 #### From GitHub repository
 
 ```bash
-wget https://kaos.sh/webkaos-utils/SOURCES/webkaos-utils
-chmod +x webkaos-utils
-[sudo] mv webkaos-utils /usr/bin/
+wget https://kaos.sh/web-utils/SOURCES/web-utils
+chmod +x web-utils
+sudo mv web-utils /usr/bin/
 ```
 
 Also, you can use the latest version of utility without installation:
 
 ```bash
-bash <(curl -fsSL https://kaos.sh/webkaos-utils/SOURCES/webkaos-utils) # pass options here
+bash <(curl -fsSL https://kaos.sh/web-utils/SOURCES/web-utils) # pass options here
 ```
 
 ### Usage
 
 ```
-Usage: webkaos-utils command args…
+Usage: web-utils command args…
 
 Commands
 
@@ -57,24 +57,25 @@ Commands
 Options
 
   --ecc, -E        Generate ECC certificate signing request
+  --size, -s size  Key size (ECC: 256-384 / RSA: 2048-8192)
   --help, -h       Show this help message
   --version, -v    Show information about version
 
 Examples
 
-  webkaos-utils csr-gen domain.com
+  web-utils csr-gen domain.com
   Generate RSA key and a certificate signing request for domain.com
 
-  webkaos-utils hpkp-gen domain.com.csr domain.com.backup.key
+  web-utils hpkp-gen domain.com.csr domain.com.backup.key
   Generate HTTP public key pinning (HPKP) header with server and backup pins
 
-  webkaos-utils ocsp-gen sever.crt issuer.crt
+  web-utils ocsp-gen sever.crt issuer.crt
   Generate OCSP stapling file using server and issuer certificates
 
-  webkaos-utils ocsp-gen sever-chain.crt
+  web-utils ocsp-gen sever-chain.crt
   Generate OCSP stapling file using certificate chain
 
-  webkaos-utils ocsp-check essentialkaos.com
+  web-utils ocsp-check essentialkaos.com
   Check OCSP response status for essentialkaos.com
 
 
@@ -84,8 +85,8 @@ Examples
 
 | Branch | Status |
 |--------|--------|
-| `master` | [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=master)](https://travis-ci.org/essentialkaos/webkaos-utils) |
-| `develop` | [![Build Status](https://travis-ci.org/essentialkaos/webkaos-utils.svg?branch=develop)](https://travis-ci.org/essentialkaos/webkaos-utils) |
+| `master` | [![Build Status](https://travis-ci.org/essentialkaos/web-utils.svg?branch=master)](https://travis-ci.org/essentialkaos/web-utils) |
+| `develop` | [![Build Status](https://travis-ci.org/essentialkaos/web-utils.svg?branch=develop)](https://travis-ci.org/essentialkaos/web-utils) |
 
 ### License
 

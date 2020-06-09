@@ -10,10 +10,10 @@ fi
 ########################################################################################
 
 # Utility name
-APP="WEBKAOS Utils"
+APP="WEB Utils"
 
 # Utility version
-VER="1.8.1"
+VER="2.0.0"
 
 ########################################################################################
 
@@ -56,10 +56,19 @@ TMP_PATTERN="/tmp/_wu.XXXXXXXXX"
 # Default RSA key length
 RSA_SIZE=2048
 
+# Default ECC key length
+ECC_SIZE=256
+
+# Min and max key sizes
+MIN_RSA_SIZE=2048
+MAX_RSA_SIZE=8192
+MIN_ECC_SIZE=256
+MAX_ECC_SIZE=384
+
 ########################################################################################
 
-SUPPORTED_ARGS="!ecc !help !usage !version !ver !no_colors"
-SHORT_ARGS="E:!ecc h:!help v:!version nc:!no_colors"
+SUPPORTED_ARGS="!ecc size !help !usage !version !ver !no_colors"
+SHORT_ARGS="E:!ecc s:size h:!help v:!version nc:!no_colors"
 
 ########################################################################################
 
@@ -451,6 +460,8 @@ generateCRSFromConfig() {
   local config="$1"
   local host
 
+  checkKeyLength
+
   host=$(grep 'DOMAIN = ' "$config" | cut -f2 -d"=" | tr -d ' "')
 
   if [[ -z "$host" ]] ; then
@@ -461,9 +472,9 @@ generateCRSFromConfig() {
   host=$(formatHostName "$host")
 
   if [[ -z "$ecc" ]] ; then
-    openssl req -new -config "$config" -newkey rsa:$RSA_SIZE -nodes -sha256 -keyout "${host}.key" -out "${host}.csr" &> /dev/null
+    openssl req -new -config "$config" -newkey "rsa:${size:-$RSA_SIZE}" -nodes -sha256 -keyout "${host}.key" -out "${host}.csr" &> /dev/null
   else
-    openssl ecparam -name prime256v1 -genkey -out "${host}.key" &> /dev/null
+    openssl ecparam -name "$(getECCCurveName)" -genkey -out "${host}.key" &> /dev/null
     openssl req -new -config "$config" -key "${host}.key" -out "${host}.csr" &> /dev/null
   fi
 
@@ -488,12 +499,14 @@ generateCRSInteractive() {
   local domain="$1"
   local host
 
+  checkKeyLength
+
   host=$(formatHostName "$1")
 
   if [[ -z "$ecc" ]] ; then
-    openssl req -new -newkey rsa:$RSA_SIZE -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+    openssl req -new -newkey "rsa:${size:-$RSA_SIZE}" -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
   else
-    openssl ecparam -name prime256v1 -genkey -out "${host}.key"
+    openssl ecparam -name "$(getECCCurveName)" -genkey -out "${host}.key"
     openssl req -new -key "${host}.key" -out "${host}.csr"
   fi
 
@@ -638,6 +651,48 @@ formatHostName() {
   echo "$1" | sed 's/\*\./wildcard-/g' | sed 's/\./_/g'
 }
 
+# Checks key size
+#
+# Code: No
+# Echo: No
+checkKeyLength() {
+  if [[ -z "$size" ]] ; then
+    return
+  fi
+
+  if [[ -n "$ecc" && $size -lt $MIN_ECC_SIZE ]] ; then
+    error "ECC key size is too small ($size < $MIN_ECC_SIZE)"
+    doExit 1
+  fi
+
+  if [[ -n "$ecc" && $size -gt $MAX_ECC_SIZE ]] ; then
+    error "ECC key size is too big ($size > $MAX_ECC_SIZE)"
+    doExit 1
+  fi
+
+  if [[ -z "$ecc" && $size -lt $MIN_RSA_SIZE ]] ; then
+    error "RSA key size is too small ($size < $MIN_RSA_SIZE)"
+    doExit 1
+  fi
+
+  if [[ -z "$ecc" && $size -gt $MAX_RSA_SIZE ]] ; then
+    error "RSA key size is too big ($size > $MAX_RSA_SIZE)"
+    doExit 1
+  fi
+}
+
+# Returns curve name for ECC certificate
+#
+# Code: No
+# Echo: Curve name (String)
+getECCCurveName() {
+  if [[ "$size" == "384" ]] ; then
+    echo "secp384r1"
+  else
+    echo "prime256v1"
+  fi
+}
+
 # INT/TERM signal trap method
 #
 # Code: No
@@ -705,7 +760,7 @@ error() {
 # Echo: No
 usage() {
   show ""
-  show "${CL_BOLD}Usage:${CL_NORM} webkaos-utils ${CL_YELLOW}command${CL_NORM} ${CL_GREY}args…${CL_NORM}"
+  show "${CL_BOLD}Usage:${CL_NORM} web-utils ${CL_YELLOW}command${CL_NORM} ${CL_GREY}args…${CL_NORM}"
   show ""
   show "Commands" $BOLD
   show ""
@@ -743,11 +798,13 @@ usage() {
   show ""
   
   if [[ -n "$DARK" ]] ; then
-    show "  ${CL_GREEN}--ecc, -E${CL_NORM} ${CL_DARK}......${CL_NORM} Generate ECC certificate signing request"
-    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}.....${CL_NORM} Show this help message"
-    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}..${CL_NORM} Show information about version"
+    show "  ${CL_GREEN}--ecc, -E${CL_NORM} ${CL_DARK}........${CL_NORM} Generate ECC certificate signing request"
+    show "  ${CL_GREEN}--size, -S ${CL_GREY}size${CL_NORM} ${CL_DARK}..${CL_NORM} Key size ${CL_DARK}(ECC: $MIN_ECC_SIZE-$MAX_ECC_SIZE / RSA: $MIN_RSA_SIZE-$MAX_RSA_SIZE)${CL_NORM}"
+    show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}.......${CL_NORM} Show this help message"
+    show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}....${CL_NORM} Show information about version"
   else
     show "  --ecc, -E        Generate ECC certificate signing request"
+    show "  --size, -s size  Key size (ECC: $MIN_ECC_SIZE-$MAX_ECC_SIZE / RSA: $MIN_RSA_SIZE-$MAX_RSA_SIZE)"
     show "  --help, -h       Show this help message"
     show "  --version, -v    Show information about version"
   fi
@@ -755,19 +812,19 @@ usage() {
   show ""
   show "Examples" $BOLD
   show ""
-  show "  webkaos-utils csr-gen domain.com"
+  show "  web-utils csr-gen domain.com"
   show "  Generate RSA key and a certificate signing request for domain.com" $DARK
   show ""
-  show "  webkaos-utils hpkp-gen domain.com.csr domain.com.backup.key"
+  show "  web-utils hpkp-gen domain.com.csr domain.com.backup.key"
   show "  Generate HTTP public key pinning (HPKP) header with server and backup pins" $DARK
   show ""
-  show "  webkaos-utils ocsp-gen sever.crt issuer.crt"
+  show "  web-utils ocsp-gen sever.crt issuer.crt"
   show "  Generate OCSP stapling file using server and issuer certificates" $DARK
   show ""
-  show "  webkaos-utils ocsp-gen sever-chain.crt"
+  show "  web-utils ocsp-gen sever-chain.crt"
   show "  Generate OCSP stapling file using certificate chain" $DARK
   show ""
-  show "  webkaos-utils ocsp-check essentialkaos.com"
+  show "  web-utils ocsp-check essentialkaos.com"
   show "  Check OCSP response status for essentialkaos.com" $DARK
   show ""
 }
@@ -778,7 +835,7 @@ usage() {
 # Echo: No
 about() {
   show ""
-  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Helpers for working with webkaos server"
+  show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Helpers for working with web server"
   show ""
   show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
   show "Essential Kaos Open Source License <https://essentialkaos.com/ekol>" $DARK
