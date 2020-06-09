@@ -16,14 +16,14 @@
 #### From ESSENTIAL KAOS Public repository
 
 ```
-sudo yum install -y yum install -y https://yum.kaos.st/get/$(uname -r).rpm
+sudo yum install -y https://yum.kaos.st/get/$(uname -r).rpm
 sudo yum install web-utils
 ```
 
 #### From GitHub repository
 
 ```bash
-wget https://kaos.sh/web-utils/SOURCES/web-utils
+curl https://kaos.sh/web-utils/SOURCES/web-utils -o web-utils
 chmod +x web-utils
 sudo mv web-utils /usr/bin/
 ```
