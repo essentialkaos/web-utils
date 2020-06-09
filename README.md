@@ -9,7 +9,7 @@
 
 <br/>
 
-`web-utils` is helpers for working with [webkaos](https://github.com/essentialkaos/webkaos) server.
+`web-utils` is helpers for working with web server.
 
 ### Installation
 
