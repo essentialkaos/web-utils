@@ -1,12 +1,12 @@
 ################################################################################
 
-Summary:         Helpers for working with webkaos server
-Name:            webkaos-utils
-Version:         1.8.1
+Summary:         Helpers for working with web server
+Name:            web-utils
+Version:         2.0.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         EKOL
-URL:             https://kaos.sh/webkaos-utils
+URL:             https://kaos.sh/web-utils
 
 Source0:         https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 
@@ -20,7 +20,7 @@ Provides:        %{name} = %{version}-%{release}
 ################################################################################
 
 %description
-Helpers for working with webkaos server.
+Helpers for working with web server.
 
 ################################################################################
 
@@ -47,6 +47,10 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Wed Jun 10 2020 Anton Novojilov <andy@essentialkaos.com> - 2.0.0-0
+- Renamed to web-utils
+- Added option for key size configuration
+
 * Sun May 31 2020 Anton Novojilov <andy@essentialkaos.com> - 1.8.1-0
 - Default RSA key length changed to 2048
 
