@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with web server
 Name:            web-utils
-Version:         2.0.0
+Version:         2.1.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         Apache License, Version 2.0
@@ -47,6 +47,10 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Sat Jan 02 2021 Anton Novojilov <andy@essentialkaos.com> - 2.1.0-0
+- Fixed bug with showing CSR info
+- Improved UI
+
 * Wed Jun 10 2020 Anton Novojilov <andy@essentialkaos.com> - 2.0.0-0
 - Renamed to web-utils
 - Added option for key size configuration

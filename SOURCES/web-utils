@@ -13,7 +13,7 @@ fi
 APP="WEB Utils"
 
 # Utility version
-VER="2.0.0"
+VER="2.1.0"
 
 ########################################################################################
 
@@ -162,7 +162,7 @@ showCSR() {
     doExit 1
   fi
 
-  local tmp_file subject country state state company section domain email
+  local tmp_file subject country state city company section domain email
   local algorithm key_size key_info
 
   tmp_file=$(mktemp -u "$TMP_PATTERN")
@@ -178,7 +178,7 @@ showCSR() {
   subject=$(grep 'Subject:' "$tmp_file" | sed 's/^ *Subject: //')
   country=$(echo "$subject" | cut -f1 -d"," | cut -f2 -d"=")
   state=$(echo "$subject" | cut -f2 -d"," | cut -f2 -d"=")
-  state=$(echo "$subject" | cut -f3 -d"," | cut -f2 -d"=")
+  city=$(echo "$subject" | cut -f3 -d"," | cut -f2 -d"=")
   company=$(echo "$subject" | cut -f4 -d"," | cut -f2 -d"=")
   section=$(echo "$subject" | cut -f5 -d"," | cut -f2 -d"=")
   domain=$(echo "$subject" | cut -f6 -d"," | cut -f2 -d"=" | cut -f1 -d"/")
@@ -187,9 +187,9 @@ showCSR() {
   key_size=$(grep "Public-Key:" "$tmp_file" | cut -f2 -d":")
 
   if [[ "$algorithm" == "id-ecPublicKey" ]] ; then
-    key_info="ECC${key_size}"
+    key_info="ECC${CL_GREY}${key_size}${CL_NORM}"
   else
-    key_info="RSA${key_size}"
+    key_info="RSA${CL_GREY}${key_size}${CL_NORM}"
   fi
 
   show ""
@@ -198,7 +198,7 @@ showCSR() {
   show "${CL_BOLD}Email address:${CL_NORM}         ${email:---empty--}"
   show "${CL_BOLD}Country code:${CL_NORM}          ${country:---empty--}"
   show "${CL_BOLD}State or province:${CL_NORM}     ${state:---empty--}"
-  show "${CL_BOLD}Locality:${CL_NORM}              ${state:---empty--}"
+  show "${CL_BOLD}Locality:${CL_NORM}              ${city:---empty--}"
   show "${CL_BOLD}Organization:${CL_NORM}          ${company:---empty--}"
   show "${CL_BOLD}Organizational unit:${CL_NORM}   ${section:---empty--}"
   show ""
@@ -215,16 +215,16 @@ genCSRConfig() {
     usage && doExit 0
   fi
 
-  local output="$1"
-  local tmp_file domain email country state city company section
+  local domain="$1"
+  local host tmp_file domain email country state city company section
 
+  host=$(formatHostName "$1")
   tmp_file=$(mktemp -u "$TMP_PATTERN")
 
   createOpenSSLConfigTemplate "$tmp_file"
 
   show ""
 
-  read -r -e -p "Common Name (domain): " domain
   read -r -e -p "Email Address: " email
   read -r -e -p "Country Code (XX): " country
   read -r -e -p "State or Province: " state
@@ -242,10 +242,10 @@ genCSRConfig() {
 
   show ""
 
-  cat "$tmp_file" > "$output"
-  chmod 0600 "$output"
+  cat "$tmp_file" > "${host}.cnf"
+  chmod 0600 "${host}.cnf"
 
-  show "Configuration file created as ${output}" $GREEN
+  show "Configuration file created as ${host}.cnf" $GREEN
 }
 
 # Generate OCSP
@@ -629,7 +629,7 @@ prompt = no
 encrypt_key = no
 distinguished_name = dn
 
-[dn]
+[ dn ]
 C = \$COUNTRY
 ST = \$STATE
 L = \$CITY
@@ -769,7 +769,7 @@ usage() {
     show "${CL_DARK}┌ ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}......................${CL_NORM} Generate key and a certificate signing request"
     show "${CL_DARK}└ ${CL_YELLOW}csr-gen${CL_NORM} ${CL_GREY}config${CL_NORM} ${CL_DARK}....................${CL_NORM} Generate key and a certificate signing request from OpenSSL configuration file"
     show "  ${CL_YELLOW}csr-info${CL_NORM} ${CL_GREY}csr${CL_NORM} ${CL_DARK}......................${CL_NORM} Print info from certificate signing request"
-    show "  ${CL_YELLOW}csr-config-gen${CL_NORM} ${CL_GREY}output${CL_NORM} ${CL_DARK}.............${CL_NORM} Generate OpenSSL configuration file for certificate signing request generation"
+    show "  ${CL_YELLOW}csr-config-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OpenSSL configuration file for certificate signing request generation"
     show "${CL_DARK}┌ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
     show "${CL_DARK}│ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
     show "${CL_DARK}└ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
@@ -782,7 +782,7 @@ usage() {
     show "┌ csr-gen host                        Generate key and a certificate signing request"
     show "└ csr-gen config                      Generate key and a certificate signing request from OpenSSL configuration file"
     show "  csr-info csr                        Print info from certificate signing request"
-    show "  csr-config-gen output               Generate OpenSSL configuration file for certificate signing request generation"
+    show "  csr-config-gen host                 Generate OpenSSL configuration file for certificate signing request generation"
     show "┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file"
     show "│ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file"
     show "└ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file"
