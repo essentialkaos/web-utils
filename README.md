@@ -1,7 +1,7 @@
 <p align="center"><a href="#readme"><img src="https://gh.kaos.st/web-utils.svg"/></a></p>
 
 <p align="center">
-  <a href="https://github.com/essentialkaos/web-utils/actions"><img src="https://github.com/essentialkaos/web-utils/workflows/CI/badge.svg" alt="GitHub Actions Status" /></a>
+  <a href="https://kaos.sh/w/web-utils/ci"><img src="https://kaos.sh/w/web-utils/ci.svg" alt="GitHub Actions CI Status" /></a>
   <a href="#license"><img src="https://gh.kaos.st/apache2.svg"></a>
 </p>
 
@@ -85,8 +85,8 @@ Examples
 
 | Branch | Status |
 |--------|--------|
-| `master` | [![CI](https://github.com/essentialkaos/web-utils/workflows/CI/badge.svg?branch=master)](https://github.com/essentialkaos/web-utils/actions) |
-| `develop` | [![CI](https://github.com/essentialkaos/web-utils/workflows/CI/badge.svg?branch=develop)](https://github.com/essentialkaos/web-utils/actions) |
+| `master` | [![CI](https://kaos.sh/w/web-utils/ci.svg?branch=master)](https://kaos.sh/w/web-utils/ci?query=branch:master) |
+| `develop` | [![CI](https://kaos.sh/w/web-utils/ci.svg?branch=master)](https://kaos.sh/w/web-utils/ci?query=branch:develop) |
 
 ### License
 
