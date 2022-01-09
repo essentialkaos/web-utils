@@ -31,7 +31,15 @@ sudo mv web-utils /usr/bin/
 Also, you can use the latest version of utility without installation:
 
 ```bash
-bash <(curl -fsSL https://kaos.sh/web-utils/SOURCES/web-utils) # pass options here
+bash <(curl -fsSL https://kaos.sh/web-utils/SOURCES/web-utils) # pass your options here
+```
+
+#### Using Docker
+
+The latest version of `web-utils` also available as [Docker image](https://kaos.sh/d/web-utils).
+
+```bash
+docker run --rm -it -v "$(pwd):/data" essentialkaos/web-utils:latest # pass your options here
 ```
 
 ### Usage
@@ -45,6 +53,7 @@ Commands
 └ csr-gen config                      Generate key and a certificate signing request from OpenSSL configuration file
   csr-info csr                        Print info from certificate signing request
   csr-config-gen host                 Generate OpenSSL configuration file for certificate signing request generation
+  crt-info crt                        Print info from certificate
 ┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file
 │ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file
 └ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file
@@ -77,8 +86,6 @@ Examples
 
   web-utils ocsp-check essentialkaos.com
   Check OCSP response status for essentialkaos.com
-
-
 ```
 
 ### Build Status

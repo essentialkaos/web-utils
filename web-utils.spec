@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with web server
 Name:            web-utils
-Version:         2.1.0
+Version:         2.2.0
 Release:         0%{?dist}
 Group:           Applications/System
 License:         Apache License, Version 2.0
@@ -47,6 +47,12 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Sun Jan 09 2022 Anton Novojilov <andy@essentialkaos.com> - 2.2.0-0
+- Added command 'crt-info' for viewing information from certificates
+- Added 'NO_COLOR' support
+- Options parser updated to the latest version
+- Code refactoring
+
 * Sat Jan 02 2021 Anton Novojilov <andy@essentialkaos.com> - 2.1.0-0
 - Fixed bug with showing CSR info
 - Improved UI
