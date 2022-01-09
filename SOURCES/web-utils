@@ -184,7 +184,7 @@ showCSR() {
     doExit 1
   fi
 
-  subject=$(grep 'Subject:' "$tmp_file" | cut -f1 -d':' | sed 's/^ \+//')
+  subject=$(grep 'Subject:' "$tmp_file" | sed 's/^ *Subject: //')
   country=$(echo "$subject" | cut -f1 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
   state=$(echo "$subject" | cut -f2 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
   city=$(echo "$subject" | cut -f3 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
