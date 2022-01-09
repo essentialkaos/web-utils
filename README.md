@@ -31,7 +31,15 @@ sudo mv web-utils /usr/bin/
 Also, you can use the latest version of utility without installation:
 
 ```bash
-bash <(curl -fsSL https://kaos.sh/web-utils/SOURCES/web-utils) # pass options here
+bash <(curl -fsSL https://kaos.sh/web-utils/SOURCES/web-utils) # pass your options here
+```
+
+#### Using Docker
+
+The latest version of `web-utils` also available as [Docker image](https://kaos.sh/d/web-utils).
+
+```bash
+docker run --rm -it -v "$(pwd):/data" essentialkaos/web-utils:latest # pass your options here
 ```
 
 ### Usage
