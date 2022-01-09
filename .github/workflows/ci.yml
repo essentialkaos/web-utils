@@ -78,4 +78,9 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -f Dockerfile -t web-utils .
+          docker build -f Dockerfile -t final-image .
+
+      - name: Measure image size
+        run: |
+          image_size=$(docker inspect -f "{{ .Size }}" final-image)
+          printf "Uncompressed image size: %d (%s)\n" $image_size $(echo "$image_size" | numfmt --to=si)

@@ -11,7 +11,7 @@ LABEL org.opencontainers.image.title="web-utils" \
       org.opencontainers.image.source="https://github.com/essentialkaos/web-utils"
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache ca-certificates bash openssl && \
+RUN apk add --no-cache ca-certificates bash openssl coreutils && \
     mkdir /data
 
 COPY SOURCES/web-utils /usr/bin

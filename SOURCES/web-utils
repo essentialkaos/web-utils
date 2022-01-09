@@ -184,14 +184,14 @@ showCSR() {
     doExit 1
   fi
 
-  subject=$(grep 'Subject:' "$tmp_file" | sed 's/^ *Subject: //')
-  country=$(echo "$subject" | cut -f1 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
-  state=$(echo "$subject" | cut -f2 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
-  city=$(echo "$subject" | cut -f3 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
-  company=$(echo "$subject" | cut -f4 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
-  section=$(echo "$subject" | cut -f5 -d',' | cut -f2 -d'=' | sed 's/^ \+//')
-  domain=$(echo "$subject" | cut -f6 -d',' | cut -f2 -d'=' | cut -f1 -d"/" | sed 's/^ \+//')
-  email=$(echo "$subject" | cut -f6 -d',' | cut -f3 -d'=' | sed 's/^ \+//')
+  subject=$(grep 'Subject:' "$tmp_file" | sed 's/^ *Subject: //' | sed 's/ = /=/g' | sed 's/, /,/g' | tr '/' ',')
+  country=$(echo "$subject" | cut -f1 -d',' | cut -f2 -d'=')
+  state=$(echo "$subject" | cut -f2 -d',' | cut -f2 -d'=')
+  city=$(echo "$subject" | cut -f3 -d',' | cut -f2 -d'=')
+  company=$(echo "$subject" | cut -f4 -d',' | cut -f2 -d'=')
+  section=$(echo "$subject" | cut -f5 -d',' | cut -f2 -d'=')
+  domain=$(echo "$subject" | cut -f6 -d',' | cut -f2 -d'=')
+  email=$(echo "$subject" | cut -f7 -d',' | cut -f2 -d'=')
   key_algo=$(grep 'Public Key Algorithm:' "$tmp_file" | cut -f2 -d':' | tr -d ' ')
   key_size=$(grep 'Public-Key:' "$tmp_file" | cut -f2 -d':')
 
@@ -257,7 +257,7 @@ showCRT() {
   fi
 
   subject=$(grep 'Subject:' "$tmp_file" | cut -f2 -d'=' | sed 's/^ \+//')
-  issuer=$(grep 'Issuer:' "$tmp_file" | head -1 | cut -f2 -d':' | sed 's/^ \+//' | sed 's/, / \/ /g' | sed 's/\w\w\?=//g')
+  issuer=$(grep 'Issuer:' "$tmp_file" | head -1 | sed 's/ = /=/g' | cut -f2 -d':' | sed 's/^ \+//' | sed 's/, / \/ /g' | sed 's/\w\w\?=//g')
   alt_names=$(grep -A1 'Subject Alternative Name:' "$tmp_file" | tail -1 | sed 's/^ \+//' | sed 's/DNS://g' | tr -d ',')
   valid_after=$(grep 'Not Before:' "$tmp_file" | cut -f2-99 -d':' | sed 's/^ \+//')
   valid_before=$(grep 'Not After :' "$tmp_file" | cut -f2-99 -d':' | sed 's/^ \+//')
