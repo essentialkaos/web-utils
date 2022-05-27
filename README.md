@@ -36,10 +36,16 @@ bash <(curl -fsSL https://kaos.sh/web-utils/SOURCES/web-utils) # pass your optio
 
 #### Using Docker
 
-The latest version of `web-utils` also available as [Docker image](https://kaos.sh/d/web-utils).
+The latest version of `web-utils` also available as Docker image on [DockerHub](https://kaos.sh/d/web-utils) and [GitHub Container Registry](https://kaos.sh/p/web-utils).
 
 ```bash
 docker run --rm -it -v "$(pwd):/data" essentialkaos/web-utils:latest # pass your options here
+```
+
+or
+
+```bash
+docker run --rm -it -v "$(pwd):/data" ghcr.io/essentialkaos/web-utils:latest # pass your options here
 ```
 
 ### Usage
