@@ -2,7 +2,7 @@
 
 Summary:         Helpers for working with web server
 Name:            web-utils
-Version:         2.2.0
+Version:         2.2.1
 Release:         0%{?dist}
 Group:           Applications/System
 License:         Apache License, Version 2.0
@@ -39,6 +39,8 @@ ln -sf %{_bindir}/%{name} %{buildroot}%{_bindir}/wu
 %clean
 rm -rf %{buildroot}
 
+################################################################################
+
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
@@ -47,6 +49,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Tue Jan 31 2023 Anton Novojilov <andy@essentialkaos.com> - 2.2.1-0
+- Minor fixes
+
 * Sun Jan 09 2022 Anton Novojilov <andy@essentialkaos.com> - 2.2.0-0
 - Added command 'crt-info' for viewing information from certificates
 - Added 'NO_COLOR' support
