@@ -13,7 +13,7 @@ fi
 APP="WEB Utils"
 
 # Utility version
-VER="2.2.0"
+VER="2.2.1"
 
 ################################################################################
 
@@ -73,8 +73,8 @@ MAX_ECC_SIZE=384
 
 ################################################################################
 
-SUPPORTED_OPTS="!ecc size !help !usage !version !ver !no_colors"
-SHORT_OPTS="E:!ecc s:size h:!help v:!version nc:!no_colors"
+SUPPORTED_OPTS="!ecc size !help !version !no_color"
+SHORT_OPTS="E:!ecc s:size h:!help v:!version nc:!no_color"
 
 ################################################################################
 
@@ -85,18 +85,18 @@ SHORT_OPTS="E:!ecc s:size h:!help v:!version nc:!no_colors"
 # Code: No
 # Echo: No
 main() {
-  if [[ ! -t 1 || -n "$no_colors" || -n "$NO_COLOR" ]] ; then
+  if [[ ! -t 1 || -n "$no_color" || -n "$NO_COLOR" ]] ; then
     unset NORM BOLD UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
     unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_BL_DARK
   fi
 
-  if [[ -n "$version" || -n "$ver" ]] ; then
+  if [[ -n "$version" ]] ; then
     about
     exit 0
   fi
 
-  if [[ $# -eq 0 || -n "$help" || -n "$usage" ]] ; then
+  if [[ $# -eq 0 || -n "$help" ]] ; then
     usage
     exit 0
   fi
@@ -837,7 +837,7 @@ doExit() {
 # Code: No
 # Echo: No
 show() {
-  if [[ -n "$2" && -z "$no_colors" ]] ; then
+  if [[ -n "$2" && -z "$no_color" ]] ; then
     echo -e "\e[${2}m${1}\e[0m"
   else
     echo -e "$*"
@@ -903,11 +903,13 @@ usage() {
   if [[ -n "$DARK" ]] ; then
     show "  ${CL_GREEN}--ecc, -E${CL_NORM} ${CL_DARK}........${CL_NORM} Generate ECC certificate signing request"
     show "  ${CL_GREEN}--size, -S ${CL_GREY}size${CL_NORM} ${CL_DARK}..${CL_NORM} Key size ${CL_DARK}(ECC: $MIN_ECC_SIZE-$MAX_ECC_SIZE / RSA: $MIN_RSA_SIZE-$MAX_RSA_SIZE)${CL_NORM}"
+    show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}..${CL_NORM} Disable colors in output"
     show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}.......${CL_NORM} Show this help message"
     show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}....${CL_NORM} Show information about version"
   else
     show "  --ecc, -E        Generate ECC certificate signing request"
     show "  --size, -s size  Key size (ECC: $MIN_ECC_SIZE-$MAX_ECC_SIZE / RSA: $MIN_RSA_SIZE-$MAX_RSA_SIZE)"
+    show "  --no-color, -nc  Disable colors in output"
     show "  --help, -h       Show this help message"
     show "  --version, -v    Show information about version"
   fi
@@ -960,7 +962,6 @@ showOptWarn() {
 
 if [[ $# -eq 0 ]] ; then
   main
-  exit $?
 fi
 
 unset opt optn optm optv optt optk
