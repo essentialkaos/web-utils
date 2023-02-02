@@ -34,6 +34,14 @@ Also, you can use the latest version of utility without installation:
 bash <(curl -fsSL https://kaos.sh/web-utils/SOURCES/web-utils) # pass your options here
 ```
 
+#### Using Makefile and Git
+
+```bash
+git clone https://kaos.sh/web-utils.git
+cd web-utils
+sudo make install
+```
+
 #### Using Docker
 
 The latest version of `web-utils` also available as Docker image on [DockerHub](https://kaos.sh/d/web-utils) and [GitHub Container Registry](https://kaos.sh/p/web-utils).
