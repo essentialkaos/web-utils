@@ -13,12 +13,13 @@ fi
 APP="WEB Utils"
 
 # Utility version
-VER="2.2.1"
+VER="2.3.0"
 
 ################################################################################
 
 NORM=0
 BOLD=1
+ITLC=3
 UNLN=4
 RED=31
 GREEN=32
@@ -29,24 +30,26 @@ CYAN=36
 GREY=37
 DARK=90
 
-CL_NORM="\e[0m"
-CL_BOLD="\e[0;${BOLD};49m"
-CL_UNLN="\e[0;${UNLN};49m"
-CL_RED="\e[0;${RED};49m"
-CL_GREEN="\e[0;${GREEN};49m"
-CL_YELLOW="\e[0;${YELLOW};49m"
-CL_BLUE="\e[0;${BLUE};49m"
-CL_MAG="\e[0;${MAG};49m"
-CL_CYAN="\e[0;${CYAN};49m"
-CL_GREY="\e[0;${GREY};49m"
-CL_DARK="\e[0;${DARK};49m"
-CL_BL_RED="\e[1;${RED};49m"
-CL_BL_GREEN="\e[1;${GREEN};49m"
-CL_BL_YELLOW="\e[1;${YELLOW};49m"
-CL_BL_BLUE="\e[1;${BLUE};49m"
-CL_BL_MAG="\e[1;${MAG};49m"
-CL_BL_CYAN="\e[1;${CYAN};49m"
-CL_BL_GREY="\e[1;${GREY};49m"
+CL_NORM="\e[${NORM}m"
+CL_BOLD="\e[${BOLD}m"
+CL_ITLC="\e[${ITLC}m"
+CL_UNLN="\e[${UNLN}m"
+CL_RED="\e[${RED}m"
+CL_GREEN="\e[${GREEN}m"
+CL_YELLOW="\e[${YELLOW}m"
+CL_BLUE="\e[${BLUE}m"
+CL_MAG="\e[${MAG}m"
+CL_CYAN="\e[${CYAN}m"
+CL_GREY="\e[${GREY}m"
+CL_DARK="\e[${DARK}m"
+CL_BL_RED="\e[${BOLD};${RED}m"
+CL_BL_GREEN="\e[${BOLD};${GREEN}m"
+CL_BL_YELLOW="\e[${BOLD};${YELLOW}m"
+CL_BL_BLUE="\e[${BOLD};${BLUE}m"
+CL_BL_MAG="\e[${BOLD};${MAG}m"
+CL_BL_CYAN="\e[${BOLD};${CYAN}m"
+CL_BL_GREY="\e[${BOLD};${GREY}m"
+CL_IT_DARK="\e[${ITLC};${DARK}m"
 
 ################################################################################
 
@@ -85,10 +88,11 @@ SHORT_OPTS="E:!ecc s:size h:!help v:!version nc:!no_color"
 # Code: No
 # Echo: No
 main() {
-  if [[ ! -t 1 || -n "$no_color" || -n "$NO_COLOR" ]] ; then
-    unset NORM BOLD UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
+  if [[ ! -c /dev/stdout || -n "$no_color" || -n "$NO_COLOR" ]] ; then
+    unset NORM BOLD CL_ITLC UNLN RED GREEN YELLOW BLUE MAG CYAN GREY DARK
     unset CL_NORM CL_BOLD CL_UNLN CL_RED CL_GREEN CL_YELLOW CL_BLUE CL_MAG CL_CYAN CL_GREY CL_DARK
-    unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_BL_DARK
+    unset CL_BL_RED CL_BL_GREEN CL_BL_YELLOW CL_BL_BLUE CL_BL_MAG CL_BL_CYAN CL_BL_GREY CL_IT_DARK
+    no_color=true
   fi
 
   if [[ -n "$version" ]] ; then
@@ -918,19 +922,19 @@ usage() {
   show "Examples" $BOLD
   show ""
   show "  web-utils csr-gen domain.com"
-  show "  Generate RSA key and a certificate signing request for domain.com" $DARK
+  show "  ${CL_IT_DARK}Generate RSA key and a certificate signing request for domain.com${CL_NORM}"
   show ""
   show "  web-utils hpkp-gen domain.com.csr domain.com.backup.key"
-  show "  Generate HTTP public key pinning (HPKP) header with server and backup pins" $DARK
+  show "  ${CL_IT_DARK}Generate HTTP public key pinning (HPKP) header with server and backup pins${CL_NORM}"
   show ""
   show "  web-utils ocsp-gen sever.crt issuer.crt"
-  show "  Generate OCSP stapling file using server and issuer certificates" $DARK
+  show "  ${CL_IT_DARK}Generate OCSP stapling file using server and issuer certificates${CL_NORM}"
   show ""
   show "  web-utils ocsp-gen sever-chain.crt"
-  show "  Generate OCSP stapling file using certificate chain" $DARK
+  show "  ${CL_IT_DARK}Generate OCSP stapling file using certificate chain${CL_NORM}"
   show ""
   show "  web-utils ocsp-check essentialkaos.com"
-  show "  Check OCSP response status for essentialkaos.com" $DARK
+  show "  ${CL_IT_DARK}Check OCSP response status for essentialkaos.com${CL_NORM}"
   show ""
 }
 
@@ -939,8 +943,14 @@ usage() {
 # Code: No
 # Echo: No
 about() {
+  local openssl_ver
+
+  openssl_ver=$(openssl version 2>/dev/null | tr -s ' ' | cut -f2 -d' ')
+
   show ""
   show "${CL_BL_CYAN}$APP${CL_NORM} ${CL_CYAN}$VER${CL_NORM} - Helpers for working with web server"
+  show "│" $DARK
+  show "└ OpenSSL: ${openssl_ver:-—}" $DARK
   show ""
   show "Copyright (C) 2009-$(date +%Y) ESSENTIAL KAOS" $DARK
   show "Apache License, Version 2.0 <https://www.apache.org/licenses/LICENSE-2.0>" $DARK
