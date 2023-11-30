@@ -1,21 +1,21 @@
 ################################################################################
 
-Summary:         Helpers for working with web server
-Name:            web-utils
-Version:         2.2.1
-Release:         0%{?dist}
-Group:           Applications/System
-License:         Apache License, Version 2.0
-URL:             https://kaos.sh/web-utils
+Summary:    Helpers for working with web server
+Name:       web-utils
+Version:    2.3.0
+Release:    0%{?dist}
+Group:      Applications/System
+License:    Apache License, Version 2.0
+URL:        https://kaos.sh/web-utils
 
-Source0:         https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
+Source0:    https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 
-BuildArch:       noarch
-BuildRoot:       %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildArch:  noarch
+BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:        bash openssl
+Requires:   bash openssl
 
-Provides:        %{name} = %{version}-%{release}
+Provides:   %{name} = %{version}-%{release}
 
 ################################################################################
 
@@ -49,6 +49,10 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Thu Nov 30 2023 Anton Novojilov <andy@essentialkaos.com> - 2.3.0-0
+- Improved version output
+- Code refactoring
+
 * Tue Jan 31 2023 Anton Novojilov <andy@essentialkaos.com> - 2.2.1-0
 - Minor fixes
 
