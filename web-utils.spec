@@ -2,7 +2,7 @@
 
 Summary:    Helpers for working with web server
 Name:       web-utils
-Version:    2.3.1
+Version:    2.3.2
 Release:    0%{?dist}
 Group:      Applications/System
 License:    Apache License, Version 2.0
@@ -49,6 +49,9 @@ rm -rf %{buildroot}
 ################################################################################
 
 %changelog
+* Fri Dec 06 2024 Anton Novojilov <andy@essentialkaos.com> - 2.3.2-0
+- Improved options parsing
+
 * Sun Jun 09 2024 Anton Novojilov <andy@essentialkaos.com> - 2.3.1-0
 - Improved automatic disabling of color output usage
 
