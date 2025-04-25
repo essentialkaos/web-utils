@@ -13,7 +13,7 @@ fi
 APP="WEB Utils"
 
 # Utility version
-VER="2.3.2"
+VER="2.4.0"
 
 ################################################################################
 
@@ -112,20 +112,21 @@ main() {
   shift 1
 
   case $cmd in
-    "csr-gen")        genCSR "$@"        ;;
-    "csr-info")       showCSR "$@"       ;;
-    "csr-config-gen") genCSRConfig "$@"  ;;
-    "crt-info")       showCRT "$@"       ;;
+    "csr-gen")        genCSR "$@" ;;
+    "csr-info")       showCSR "$@" ;;
+    "csr-config-gen") genCSRConfig "$@" ;;
+    "crt-info")       showCRT "$@" ;;
+    "self-signed")    genSelfSigned "$@" ;;
     "hpkp-gen")       genHPKPHeader "$@" ;;
-    "ocsp-gen")       genOCSP "$@"       ;;
-    "ocsp-check")     checkOCSP "$@"     ;;
-    "0rtt-check")     checkRTT "$@"      ;;
-    "htpasswd")       genHTPasswd "$@"   ;;
+    "ocsp-gen")       genOCSP "$@" ;;
+    "ocsp-check")     checkOCSP "$@" ;;
+    "0rtt-check")     checkRTT "$@" ;;
+    "htpasswd")       genHTPasswd "$@" ;;
     *) error "Unknown command ${CL_BL_RED}${cmd}${CL_RED}"
        doExit 1 ;;
   esac
 
-  doExit 0
+  doExit $?
 }
 
 # Generate signing request
@@ -135,15 +136,20 @@ main() {
 # Code: No
 # Echo: No
 genCSR() {
-  if [[ $# -eq 0 ]] ; then
-    usage && doExit 0
+  local domainOrCfg="$1"
+
+  if [[ -z "$domainOrCfg" ]] ; then
+    usage
+    return 0
   fi
 
-  if [[ -e "$1" && -r "$1" ]] ; then
+  if [[ -e "$domainOrCfg" && -r "$domainOrCfg" ]] ; then
     generateCRSFromConfig "$@"
-  else
-    generateCRSInteractive "$@"
+    return $?
   fi
+
+  generateCRSInteractive "$@"
+  return $?
 }
 
 
@@ -151,28 +157,29 @@ genCSR() {
 #
 # 1: CSR file (String)
 #
-# Code: No
+# Code: Yes
 # Echo: No
 showCSR() {
-  if [[ $# -eq 0 ]] ; then
-    usage && doExit 0
-  fi
-
   local csr="$1"
+
+  if [[ -z "$csr" ]] ; then
+    usage
+    return 0
+  fi
 
   if [[ ! -e "$csr" ]] ; then
     error "CSR file ${CL_BL_RED}${csr}${CL_RED} does not exist"
-    doExit 1
+    return 1
   fi
 
   if [[ ! -r "$csr" ]] ; then
     error "CSR file ${CL_BL_RED}${csr}${CL_RED} is not readable"
-    doExit 1
+    return 1
   fi
 
   if ! grep -q '\-BEGIN CERTIFICATE REQUEST\-' "$csr" ; then
     error "${CL_BL_RED}${csr}${CL_RED} is not a certificate signing request file"
-    doExit 1
+    return 1
   fi
 
   local tmp_file subject country state city company section domain email
@@ -180,12 +187,9 @@ showCSR() {
 
   tmp_file=$(createTempFile)
 
-  openssl req -noout -text -in "$csr" > "$tmp_file"
-
-  # shellcheck disable=SC2181
-  if [[ $? -ne 0 ]] ; then
+  if ! openssl req -noout -text -in "$csr" > "$tmp_file" ; then
     error "Error while reading CSR file"
-    doExit 1
+    return 1
   fi
 
   subject=$(grep 'Subject:' "$tmp_file" | sed 's/^ *Subject: //' | sed 's/ = /=/g' | sed 's/, /,/g' | tr '/' ',')
@@ -206,43 +210,46 @@ showCSR() {
   fi
 
   show ""
-  show "${CL_BOLD}Key:${CL_NORM}                   ${key_info:---empty--}"
-  show "${CL_BOLD}Common name (domain):${CL_NORM}  ${domain:---empty--}"
-  show "${CL_BOLD}Email address:${CL_NORM}         ${email:---empty--}"
-  show "${CL_BOLD}Country code:${CL_NORM}          ${country:---empty--}"
-  show "${CL_BOLD}State or province:${CL_NORM}     ${state:---empty--}"
-  show "${CL_BOLD}Locality:${CL_NORM}              ${city:---empty--}"
-  show "${CL_BOLD}Organization:${CL_NORM}          ${company:---empty--}"
-  show "${CL_BOLD}Organizational unit:${CL_NORM}   ${section:---empty--}"
+  show " ${CL_BOLD}Key:${CL_NORM}                   ${key_info:-—}"
+  show " ${CL_BOLD}Common name (domain):${CL_NORM}  ${domain:-—}"
+  show " ${CL_BOLD}Email address:${CL_NORM}         ${email:-—}"
+  show " ${CL_BOLD}Country code:${CL_NORM}          ${country:-—}"
+  show " ${CL_BOLD}State or province:${CL_NORM}     ${state:-—}"
+  show " ${CL_BOLD}Locality:${CL_NORM}              ${city:-—}"
+  show " ${CL_BOLD}Organization:${CL_NORM}          ${company:-—}"
+  show " ${CL_BOLD}Organizational unit:${CL_NORM}   ${section:-—}"
   show ""
+
+  return 0
 }
 
 # Show information from CRT file
 #
 # 1: Path to CRT file (String)
 #
-# Code: No
-# Echo: Yes
+# Code: Yes
+# Echo: No
 showCRT() {
-  if [[ $# -eq 0 ]] ; then
-    usage && doExit 0
-  fi
-
   local crt="$1"
+
+  if [[ -z "$crt" ]] ; then
+    usage
+    return 0
+  fi
 
   if [[ ! -e "$crt" ]] ; then
     error "CRT file ${CL_BL_RED}${crt}${CL_RED} does not exist"
-    doExit 1
+    return 1
   fi
 
   if [[ ! -r "$crt" ]] ; then
     error "CRT file ${CL_BL_RED}${crt}${CL_RED} is not readable"
-    doExit 1
+    return 1
   fi
 
   if ! grep -q '\-BEGIN CERTIFICATE\-' "$crt" ; then
     error "${CL_BL_RED}${crt}${CL_RED} is not a certificate file"
-    doExit 1
+    return 1
   fi
 
   local tmp_file issuer subject alt_names
@@ -252,15 +259,12 @@ showCRT() {
 
   tmp_file=$(createTempFile)
 
-  openssl x509 -text -noout -in "$crt" > "$tmp_file"
-
-  # shellcheck disable=SC2181
-  if [[ $? -ne 0 ]] ; then
+  if ! openssl x509 -text -noout -in "$crt" > "$tmp_file" ; then
     error "Error while reading CRT file"
-    doExit 1
+    return 1
   fi
 
-  subject=$(grep 'Subject:' "$tmp_file" | cut -f2 -d'=' | sed 's/^ \+//')
+  subject=$(grep 'Subject:' "$tmp_file" | head -1 | sed 's/ = /=/g' | cut -f2 -d':' | sed 's/^ \+//' | sed 's/, / \/ /g' | sed 's/\w\w\?=//g')
   issuer=$(grep 'Issuer:' "$tmp_file" | head -1 | sed 's/ = /=/g' | cut -f2 -d':' | sed 's/^ \+//' | sed 's/, / \/ /g' | sed 's/\w\w\?=//g')
   alt_names=$(grep -A1 'Subject Alternative Name:' "$tmp_file" | tail -1 | sed 's/^ \+//' | sed 's/DNS://g' | tr -d ',')
   valid_after=$(grep 'Not Before:' "$tmp_file" | cut -f2-99 -d':' | sed 's/^ \+//')
@@ -286,31 +290,77 @@ showCRT() {
   fi
 
   show ""
-  show "${CL_BOLD}Key:${CL_NORM}                  ${key_info:---empty--}"
-  show "${CL_BOLD}Subject:${CL_NORM}              ${subject:---empty--}"
-  show "${CL_BOLD}Alt Names:${CL_NORM}            ${alt_names:---empty--}"
-  show "${CL_BOLD}Issuer:${CL_NORM}               ${issuer:---empty--}"
-  show "${CL_BOLD}Signature Algorithm:${CL_NORM}  ${sig_algo:---empty--}"
-  show "${CL_BOLD}Valid after:${CL_NORM}          ${valid_after_dt:---empty--}"
-  show "${CL_BOLD}Valid before:${CL_NORM}         ${valid_before_dt:---empty--}"
+  show " ${CL_BOLD}Key:${CL_NORM}                  ${key_info:-—}"
+  show " ${CL_BOLD}Subject:${CL_NORM}              ${subject:-—}"
+  show " ${CL_BOLD}Alt Names:${CL_NORM}            ${alt_names:-—}"
+  show " ${CL_BOLD}Issuer:${CL_NORM}               ${issuer:-—}"
+  show " ${CL_BOLD}Signature Algorithm:${CL_NORM}  ${sig_algo:-—}"
+  show " ${CL_BOLD}Valid after:${CL_NORM}          ${valid_after_dt:-—}"
+  show " ${CL_BOLD}Valid before:${CL_NORM}         ${valid_before_dt:-—}"
   show ""
+
+  return 0
+}
+
+# Generate self-signed certificate
+#
+# 1: Variable Description (Type)
+#
+# Code: No
+# Echo: No
+genSelfSigned() {
+  local domain="$1"
+
+  if [[ -z "$domain" ]] ; then
+    usage
+    return 0
+  fi
+
+  local file_name subject
+
+  file_name=$(getFileName "$domain")
+  subject="/C=JP/ST=Tokyo/L=Tokyo/O=SELFSIGN/OU=IT/CN=$domain"
+
+  if [[ -z "$ecc" ]] ; then
+    if ! openssl req -x509 -newkey "rsa:${size:-$RSA_SIZE}" -keyout "$file_name.key" -out "$file_name.crt" -sha256 -days 21 -nodes -subj "$subject" &> /dev/null ; then
+      error "Error while certificate generation"
+      return 1
+    fi
+  else
+    if ! openssl ecparam -name "$(getECCCurveName)" -genkey -out "${file_name}.key" &> /dev/null ; then
+      error "Error while key generation"
+      return 1
+    fi
+
+    if ! openssl req -x509 -key "${file_name}.key" -out "${file_name}.crt" -days 21 -subj "$subject" &> /dev/null ; then
+      error "Error while certificate generation"
+      return 1
+    fi
+  fi
+
+  chmod 600 "${file_name}.key" "${file_name}.crt"
+
+  show "Self-signed certificate successfully generated as ${file_name}.crt (key: ${file_name}.key)" $GREEN
+
+  return 0
 }
 
 # Generate OpenSSL config for CSR generation
 #
-# 1: Output file (String)
+# 1: Domain (String)
 #
-# Code: No
+# Code: Yes
 # Echo: No
 genCSRConfig() {
-  if [[ $# -eq 0 ]] ; then
-    usage && doExit 0
-  fi
-
   local domain="$1"
   local host tmp_file domain email country state city company section
 
-  host=$(formatHostName "$1")
+  if [[ -z "$domain" ]] ; then
+    usage
+    return 0
+  fi
+
+  host=$(getFileName "$1")
   tmp_file=$(createTempFile)
 
   createOpenSSLConfigTemplate "$tmp_file"
@@ -338,6 +388,8 @@ genCSRConfig() {
   chmod 0600 "${host}.cnf"
 
   show "Configuration file created as ${host}.cnf" $GREEN
+
+  return 0
 }
 
 # Generate OCSP
@@ -348,15 +400,16 @@ genCSRConfig() {
 # Code: No
 # Echo: No
 genOCSP() {
-  local issuer_cert server_cert output
-
   if [[ $# -eq 0 ]] ; then
-    usage && doExit 0
+    usage
+    return 0
   fi
+
+  local issuer_cert server_cert output
 
   if [[ ! -f "$1" ]] ; then
     error "File ${CL_BL_RED}${1}${CL_RED} does not exist"
-    doExit 1
+    return 1
   fi
 
   if isChain "$1" ; then
@@ -371,17 +424,17 @@ genOCSP() {
 
   if [[ ! -f "$server_cert" ]] ; then
     error "Server certificate file ${CL_BL_RED}${server_cert}${CL_RED} is not exist"
-    doExit 1
+    return 1
   fi
 
   if [[ ! -f "$issuer_cert" ]] ; then
     error "Issuer certificate file ${CL_BL_RED}${issuer_cert}${CL_RED} is not exist"
-    doExit 1
+    return 1
   fi
 
-  if ! generateOCSPFile "$issuer_cert" "$server_cert" "$output" ; then
-    doExit 1
-  fi
+  generateOCSPFile "$issuer_cert" "$server_cert" "$output"
+
+  return $?
 }
 
 # Check OCSP stapling
@@ -393,62 +446,76 @@ genOCSP() {
 # Echo: No
 checkOCSP() {
   if [[ $# -eq 0 ]] ; then
-    usage && exit 0
+    usage
+    return 0
   fi
 
-  local host server_name tmp_file status
+  local domain="$1"
+  local server_name="${2:-$domain}"
 
-  host="$1"
-  server_name="${2:-$host}"
+  local tmp_file
+
   tmp_file=$(createTempFile)
-  status=$(openssl s_client -servername "$server_name" -connect "$host:443" -tls1 -tlsextdebug -status 2>&1 < /dev/null &> "$tmp_file")
 
-  if [[ $(grep 'OCSP Response Status: successful' "$tmp_file") == "" ]] ; then
+  openssl s_client -servername "$server_name" -connect "$domain:443" -tls1 -tlsextdebug -status 2>&1 < /dev/null &> "$tmp_file"
+
+  if ! grep -q 'OCSP Response Status: successful' "$tmp_file" ; then
+    rm -f "$tmp_file" &> /dev/null
     show "OCSP Response Status: ${CL_RED}No response sent${CL_NORM}"
-    doExit 1
+    return 1
   fi
 
   show "OCSP Response Status: ${CL_GREEN}Success${CL_NORM}"
   grep -A 14 'OCSP Response Data:' "$tmp_file"
+
+  rm -f "$tmp_file" &> /dev/null
+
+  return 0
 }
 
 # Checks 0-RTT support
 #
-# 1: Host (String)
+# 1: Domain (String)
 # 2: Server name (String) [Optional]
 #
-# Code: No
+# Code: Yes
 # Echo: No
 checkRTT() {
   if [[ $# -eq 0 ]] ; then
-    usage && exit 0
+    usage
+    return 0
   fi
 
   if ! isProtocolSupported "TLSv1.3" ; then
     error "Installed OpenSSL version doesn't support TLS 1.3"
-    exit 1
+    return 1
   fi
 
-  local host req_temp status
+  local domain="$1"
+  local server_name="${2:-$domain}"
 
-  host="$1"
-  server_name="${2:-$host}"
+  local req_temp ses_temp
+
   req_temp=$(createTempFile)
   ses_temp=$(createTempFile)
 
   echo -e "GET / HTTP/1.1\r\nHost: ${server_name}\r\nConnection: close\r\n\r\n" > "$req_temp"
 
-  openssl s_client -servername "$server_name" -connect "${host}:443" -tls1_3 -sess_out "$ses_temp" -ign_eof < "$req_temp" &> /dev/null
+  openssl s_client -servername "$server_name" -connect "${domain}:443" -tls1_3 -sess_out "$ses_temp" -ign_eof < "$req_temp" &> /dev/null
 
   sleep 0.1
 
-  status=$(openssl s_client -servername "$server_name" -connect "${host}:443" -tls1_3 -sess_in "$ses_temp" -early_data "$req_temp" <<< "Q" 2>&1 | grep 'Early data was ')
+  status=$(openssl s_client -servername "$server_name" -connect "${domain}:443" -tls1_3 -sess_in "$ses_temp" -early_data "$req_temp" <<< "Q" 2>&1 | grep 'Early data was ')
 
   if [[ "$status" == "Early data was accepted" ]] ; then
     show "0-RTT Status: ${CL_GREEN}$status${CL_NORM}"
   else
     show "0-RTT Status: ${CL_RED}${status:-Not supported}${CL_NORM}"
   fi
+
+  rm -f "$req_temp" "$ses_temp" &> /dev/null
+
+  return 0
 }
 
 # Generate record with MD5 password hash for .htpasswd
@@ -459,8 +526,9 @@ checkRTT() {
 # Code: No
 # Echo: No
 genHTPasswd() {
-  if [[ $# -lt 2 ]] ; then
-    usage && exit 0
+  if [[ $# -ne 2 ]] ; then
+    usage
+    return 1
   fi
 
   local user="$1"
@@ -473,20 +541,23 @@ genHTPasswd() {
 #
 # 1: Path to csr file (String)
 #
+# Code: Yes
+# Echo: No
 genHPKPHeader() {
-  if [[ $# -eq 0 ]] ; then
-    usage && doExit 0
+  if [[ $# -ne 2 ]] ; then
+    usage
+    return 0
   fi
 
-  local main_file backup_file main_pin backup_pin
-
-  main_file="$1"
-  backup_file="$2"
+  local main_file="$1"
+  local backup_file="$2"
 
   if [[ ! -r "$main_file" ]] ; then
     error "File ${CL_BL_RED}${main_file}${CL_RED} is not readable"
-    doExit 1
+    return 1
   fi
+
+  local main_pin backup_pin
 
   main_pin=$(generateHPKHHash "$main_file")
 
@@ -496,7 +567,7 @@ genHPKPHeader() {
 
   if [[ -z "$main_pin" ]] ; then
     error "Can't generate HPKP for given request"
-    doExit 1
+    return 1
   fi
 
   show "\n${CL_BL_GREEN}HPKP Header successfully generated!${CL_GREEN} Add this header as part of your config file.${CL_NORM}"
@@ -508,6 +579,8 @@ genHPKPHeader() {
   fi
 
   show "More info: https://developer.mozilla.org/en-US/docs/Web/Security/Public_Key_Pinning\n" $DARK
+
+  return 0
 }
 
 ################################################################################
@@ -516,69 +589,81 @@ genHPKPHeader() {
 #
 # 1: Path to server certificate (String)
 # 2: Path to issuer certificate (String)
-# 3: Output name (String) [Optional]
+# 3: Output name (String)
 #
 # Code: Yes
 # Echo: No
 generateOCSPFile() {
-  local issuer_cert server_cert output url
+  if [[ $# -ne 3 ]] ; then
+    usage
+    return 0
+  fi
 
-  issuer_cert="$1"
-  server_cert="$2"
-  output="$3"
+  local issuer_cert="$1"
+  local server_cert="$2"
+  local output="$3"
+
+  local url
 
   url=$(openssl x509 -in "$server_cert" -text | grep "OCSP - URI:" | cut -d: -f2,3)
 
-  openssl ocsp -noverify -no_nonce -respout "$output" -issuer "$issuer_cert" -cert "$server_cert" -url "$url" &> /dev/null
-
-  # shellcheck disable=SC2181
-  if [[ $? -ne 0 ]] ; then
+  if ! openssl ocsp -noverify -no_nonce -respout "$output" -issuer "$issuer_cert" -cert "$server_cert" -url "$url" &> /dev/null ; then
     error "Error while OCSP stapling file generation"
-    doExit 1
+    return 1
   fi
 
   chmod 600 "$output"
 
   show "OCSP stapling file saved as $output" $GREEN
+
+  return 0
 }
 
 # Generate CSR based on info from given OpenSSL configuration file
 #
-# 1: Path to config (String)
+# 1: Path to configuration file (String)
 #
 # Code: Yes
 # Echo: No
 generateCRSFromConfig() {
   local config="$1"
-  local host
+  local domain file_name
 
-  checkKeyLength
-
-  host=$(grep 'DOMAIN = ' "$config" | cut -f2 -d'=' | tr -d ' "')
-
-  if [[ -z "$host" ]] ; then
-    error "Can't read domain from configuration file"
-    doExit 1
+  if ! checkKeyLength ; then
+    return 1
   fi
 
-  host=$(formatHostName "$host")
+  domain=$(grep 'DOMAIN = ' "$config" | cut -f2 -d'=' | tr -d ' "')
+
+  if [[ -z "$domain" ]] ; then
+    error "Can't read domain from configuration file"
+    return 1
+  fi
+
+  file_name=$(getFileName "$domain")
 
   if [[ -z "$ecc" ]] ; then
-    openssl req -new -config "$config" -newkey "rsa:${size:-$RSA_SIZE}" -nodes -sha256 -keyout "${host}.key" -out "${host}.csr" &> /dev/null
+    if ! openssl req -new -config "$config" -newkey "rsa:${size:-$RSA_SIZE}" -nodes -sha256 -keyout "${file_name}.key" -out "${file_name}.csr" &> /dev/null ; then
+      error "Error while CSR file generation"
+      return 1
+    fi
   else
-    openssl ecparam -name "$(getECCCurveName)" -genkey -out "${host}.key" &> /dev/null
-    openssl req -new -config "$config" -key "${host}.key" -out "${host}.csr" &> /dev/null
+    if ! openssl ecparam -name "$(getECCCurveName)" -genkey -out "${file_name}.key" &> /dev/null ; then
+      error "Error while key generation for CSR file"
+      return 1
+    fi
+
+    if ! openssl req -new -config "$config" -key "${file_name}.key" -out "${file_name}.csr" &> /dev/null ; then
+      error "Error while CSR file generation"
+      return 1
+    fi
   fi
 
-   # shellcheck disable=SC2181
-  if [[ $? -ne 0 ]] ; then
-    error "Error while CSR file generation"
-    doExit 1
-  fi
+  chmod 600 "${file_name}.key" "${file_name}.csr"
 
-  chmod 600 "${host}.key" "${host}.csr"
+  show "Certificate Signing Request successfully generated as ${file_name}.csr (key: ${file_name}.key)" $GREEN
 
-  show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
+  return 0
 }
 
 # Generate CSR in interactive mode
@@ -589,29 +674,37 @@ generateCRSFromConfig() {
 # Echo: No
 generateCRSInteractive() {
   local domain="$1"
-  local host
+  local file_name
 
-  checkKeyLength
+  if ! checkKeyLength ; then
+    return 1
+  fi
 
-  host=$(formatHostName "$1")
+  file_name=$(getFileName "$1")
 
   if [[ -z "$ecc" ]] ; then
-    openssl req -new -newkey "rsa:${size:-$RSA_SIZE}" -nodes -sha256 -keyout "${host}.key" -out "${host}.csr"
+    if ! openssl req -new -newkey "rsa:${size:-$RSA_SIZE}" -nodes -sha256 -keyout "${file_name}.key" -out "${file_name}.csr" ; then
+      error "Error while CSR file generation"
+      return 1
+    fi
   else
-    openssl ecparam -name "$(getECCCurveName)" -genkey -out "${host}.key"
-    openssl req -new -key "${host}.key" -out "${host}.csr"
+    if ! openssl ecparam -name "$(getECCCurveName)" -genkey -out "${file_name}.key" ; then
+      error "Error while key generation for CSR file"
+      return 1
+    fi
+
+    if ! openssl req -new -key "${file_name}.key" -out "${file_name}.csr" ; then
+      error "Error while CSR file generation"
+      return 1
+    fi
   fi
 
-  # shellcheck disable=SC2181
-  if [[ $? -ne 0 ]] ; then
-    error "Error while CSR file generation"
-    doExit 1
-  fi
-
-  chmod 600 "${host}.key" "${host}.csr"
+  chmod 600 "${file_name}.key" "${file_name}.csr"
 
   show ""
-  show "Certificate Signing Request successfully generated as ${host}.csr (key: ${host}.key)" $GREEN
+  show "Certificate Signing Request successfully generated as ${file_name}.csr (key: ${file_name}.key)" $GREEN
+
+  return 0
 }
 
 # Generate HPKP hash from given file
@@ -643,9 +736,11 @@ generateHPKHHash() {
 isChain() {
   local file="$1"
 
-  [[ ! -f $file ]] && return 1
+  if [[ ! -f $file ]] ; then
+    return 1
+  fi
 
-  if [[ $(grep -c "BEGIN CERTIFICATE" "$file") -le 1 ]] ; then
+  if ! grep -q "BEGIN CERTIFICATE" "$file" ; then
     return 1
   fi
 
@@ -735,42 +830,44 @@ EOF
 
 # Formats host name
 #
-# 1: Domain (String)
+# 1: Domain name (String)
 #
 # Code: No
-# Echo: Formatted name (String)
-formatHostName() {
+# Echo: Formatted name for file (String)
+getFileName() {
   echo "$1" | sed 's/\*\./wildcard-/g' | sed 's/\./_/g'
 }
 
-# Checks key size
+# Check for key size
 #
-# Code: No
+# Code: Yes
 # Echo: No
 checkKeyLength() {
   if [[ -z "$size" ]] ; then
-    return
+    return 0
   fi
 
   if [[ -n "$ecc" && $size -lt $MIN_ECC_SIZE ]] ; then
     error "ECC key size is too small ($size < $MIN_ECC_SIZE)"
-    doExit 1
+    return 1
   fi
 
   if [[ -n "$ecc" && $size -gt $MAX_ECC_SIZE ]] ; then
     error "ECC key size is too big ($size > $MAX_ECC_SIZE)"
-    doExit 1
+    return 1
   fi
 
   if [[ -z "$ecc" && $size -lt $MIN_RSA_SIZE ]] ; then
     error "RSA key size is too small ($size < $MIN_RSA_SIZE)"
-    doExit 1
+    return 1
   fi
 
   if [[ -z "$ecc" && $size -gt $MAX_RSA_SIZE ]] ; then
     error "RSA key size is too big ($size > $MAX_RSA_SIZE)"
-    doExit 1
+    return 1
   fi
+
+  return 0
 }
 
 # Returns curve name for ECC certificate
@@ -876,6 +973,7 @@ usage() {
     show "  ${CL_YELLOW}csr-info${CL_NORM} ${CL_GREY}csr${CL_NORM} ${CL_DARK}......................${CL_NORM} Print info from certificate signing request"
     show "  ${CL_YELLOW}csr-config-gen${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate OpenSSL configuration file for certificate signing request generation"
     show "  ${CL_YELLOW}crt-info${CL_NORM} ${CL_GREY}crt${CL_NORM} ${CL_DARK}......................${CL_NORM} Print info from certificate"
+    show "  ${CL_YELLOW}self-signed${CL_NORM} ${CL_GREY}host${CL_NORM} ${CL_DARK}..................${CL_NORM} Generate self-signed certificate"
     show "${CL_DARK}┌ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}csr backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CSR file"
     show "${CL_DARK}│ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}key backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from KEY file"
     show "${CL_DARK}└ ${CL_YELLOW}hpkp-gen${CL_NORM} ${CL_GREY}crt backup${CL_NORM} ${CL_DARK}...............${CL_NORM} Generate HTTP public key pinning (HPKP) header from CRT file"
@@ -890,6 +988,7 @@ usage() {
     show "  csr-info csr                        Print info from certificate signing request"
     show "  csr-config-gen host                 Generate OpenSSL configuration file for certificate signing request generation"
     show "  crt-info crt                        Print info from certificate"
+    show "  self-signed host                    Generate self-signed certificate"
     show "┌ hpkp-gen csr backup                 Generate HTTP public key pinning (HPKP) header from CSR file"
     show "│ hpkp-gen key backup                 Generate HTTP public key pinning (HPKP) header from KEY file"
     show "└ hpkp-gen crt backup                 Generate HTTP public key pinning (HPKP) header from CRT file"
@@ -903,15 +1002,15 @@ usage() {
   show ""
   show "Options" $BOLD
   show ""
-  
+
   if [[ -n "$DARK" ]] ; then
-    show "  ${CL_GREEN}--ecc, -E${CL_NORM} ${CL_DARK}........${CL_NORM} Generate ECC certificate signing request"
+    show "  ${CL_GREEN}--ecc, -E${CL_NORM} ${CL_DARK}........${CL_NORM} Generate ECC certificate"
     show "  ${CL_GREEN}--size, -S ${CL_GREY}size${CL_NORM} ${CL_DARK}..${CL_NORM} Key size ${CL_DARK}(ECC: $MIN_ECC_SIZE-$MAX_ECC_SIZE / RSA: $MIN_RSA_SIZE-$MAX_RSA_SIZE)${CL_NORM}"
     show "  ${CL_GREEN}--no-color, -nc${CL_NORM} ${CL_DARK}..${CL_NORM} Disable colors in output"
     show "  ${CL_GREEN}--help, -h${CL_NORM} ${CL_DARK}.......${CL_NORM} Show this help message"
     show "  ${CL_GREEN}--version, -v${CL_NORM} ${CL_DARK}....${CL_NORM} Show information about version"
   else
-    show "  --ecc, -E        Generate ECC certificate signing request"
+    show "  --ecc, -E        Generate ECC certificate"
     show "  --size, -s size  Key size (ECC: $MIN_ECC_SIZE-$MAX_ECC_SIZE / RSA: $MIN_RSA_SIZE-$MAX_RSA_SIZE)"
     show "  --no-color, -nc  Disable colors in output"
     show "  --help, -h       Show this help message"
