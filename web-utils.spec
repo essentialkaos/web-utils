@@ -2,7 +2,7 @@
 
 Summary:    Helpers for working with web server
 Name:       web-utils
-Version:    2.3.2
+Version:    2.4.0
 Release:    0%{?dist}
 Group:      Applications/System
 License:    Apache License, Version 2.0
@@ -13,7 +13,7 @@ Source0:    https://source.kaos.st/%{name}/%{name}-%{version}.tar.bz2
 BuildArch:  noarch
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Requires:   bash openssl
+Requires:   bash openssl sed
 
 Provides:   %{name} = %{version}-%{release}
 
@@ -44,11 +44,16 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
-%{_bindir}/*
+%{_bindir}/web-utils
+%{_bindir}/wu
 
 ################################################################################
 
 %changelog
+* Fri Apr 25 2025 Anton Novojilov <andy@essentialkaos.com> - 2.4.0-0
+- Added command 'self-signed' for generating self-signed certificates
+- Code refactoring
+
 * Fri Dec 06 2024 Anton Novojilov <andy@essentialkaos.com> - 2.3.2-0
 - Improved options parsing
 
